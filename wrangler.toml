@@ -1,0 +1,39 @@
+# Cloudflare Pages Configuration for Trade M8
+name = "trade-m8-production"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables (secrets set via `wrangler secret put`)
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+API_VERSION = "v1"
+
+# ==============================================================================
+# CONFIGURED BINDINGS - All IDs are set and ready!
+# ==============================================================================
+
+# D1 Database binding (with schema and demo data)
+[[d1_databases]]
+binding = "DB"
+database_name = "xq-trade-m8-db"
+database_id = "263ca9ce-3d2d-4514-be1a-902c74d20803"
+
+# KV Namespaces for caching and storage
+[[kv_namespaces]]
+binding = "CACHE"
+id = "9e4bace90bfa4c08931fb548114e3eb8"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "645380f3d22648409b9adac6c3c854bb"
+
+[[kv_namespaces]]
+binding = "TRADES"
+id = "94f18f6e58d34fc38a4023f370142773"
+
+# R2 Bucket for file storage
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "trade-m8-assets"
