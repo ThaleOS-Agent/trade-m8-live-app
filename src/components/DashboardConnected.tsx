@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, Wallet, LogOut, Plus } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
+import { useTradingMode } from '../lib/TradingModeContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import web3Service, { WalletInfo } from '../lib/web3';
@@ -11,6 +12,7 @@ import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
   const { user, logout } = useAuth();
+  const { mode, isPaperTrading, isLiveTrading } = useTradingMode();
   const navigate = useNavigate();
 
   const [portfolio, setPortfolio] = useState<Portfolio>({
@@ -163,10 +165,17 @@ const DashboardConnected = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-3.5 py-1.5 rounded-lg">
-              <div className="status-dot bg-emerald-400"></div>
-              <span className="text-xs font-semibold tracking-wider">LIVE</span>
-            </div>
+            {isLiveTrading ? (
+              <div className="flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/25 px-3.5 py-1.5 rounded-lg animate-pulse">
+                <div className="status-dot bg-red-400"></div>
+                <span className="text-xs font-semibold tracking-wider">LIVE TRADING</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-blue-500/15 text-blue-400 border border-blue-500/25 px-3.5 py-1.5 rounded-lg">
+                <div className="status-dot bg-blue-400"></div>
+                <span className="text-xs font-semibold tracking-wider">PAPER TRADING</span>
+              </div>
+            )}
             {walletInfo ? (
               <button
                 onClick={handleWalletDisconnect}

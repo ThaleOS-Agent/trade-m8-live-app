@@ -1,0 +1,185 @@
+╔══════════════════════════════════════════════════════════════╗
+║  CLOUDFLARE CONFIGURATION - COPY-PASTE READY VALUES         ║
+║  Trade M8 Production Deployment                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════
+  KV BINDINGS (Functions Settings Page)
+═══════════════════════════════════════════════════════════════
+
+Binding 1:
+━━━━━━━━━━
+Variable name: CACHE
+KV namespace ID: 9e4bace90bfa4c08931fb548114e3eb8
+
+Binding 2:
+━━━━━━━━━━
+Variable name: SESSIONS
+KV namespace ID: 645380f3d22648409b9adac6c3c854bb
+
+Binding 3:
+━━━━━━━━━━
+Variable name: TRADES
+KV namespace ID: 94f18f6e58d34fc38a4023f370142773
+
+
+═══════════════════════════════════════════════════════════════
+  D1 DATABASE BINDING (Functions Settings Page)
+═══════════════════════════════════════════════════════════════
+
+Variable name: DB
+D1 database: xq-trade-m8-db
+Database ID: 263ca9ce-3d2d-4514-be1a-902c74d20803
+
+
+═══════════════════════════════════════════════════════════════
+  R2 BUCKET BINDING (Functions Settings Page)
+═══════════════════════════════════════════════════════════════
+
+Variable name: STORAGE
+R2 bucket: trade-m8-assets
+
+
+═══════════════════════════════════════════════════════════════
+  ENVIRONMENT VARIABLES (Environment Variables Page)
+  ⚠️  Select "Production" environment before adding!
+═══════════════════════════════════════════════════════════════
+
+Variable 1 - JWT_SECRET:
+━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: JWT_SECRET
+Value: 83fb2608-846e-41d0-a66a-7d94503f1b3f
+Type: Encrypted ✅
+Environment: Production
+
+
+Variable 2 - COINGECKO_API_KEY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: COINGECKO_API_KEY
+Value: CG-NFEggBc1sJ8ggZuf4UgRndqN
+Type: Encrypted ✅
+Environment: Production
+
+
+Variable 3 - SUPABASE_URL:
+━━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: SUPABASE_URL
+Value: https://eeotzybkdjvorpxqgezz.supabase.co
+Type: Plain text
+Environment: Production
+
+
+Variable 4 - SUPABASE_KEY:
+━━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: SUPABASE_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlb3R6eWJrZGp2b3JweHFnZXp6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDU2NDUwOSwiZXhwIjoyMDg2MTQwNTA5fQ.HIP1k0O_IurVhxBu_EYneHxpAh5MLqty8iCRTe2_F3w
+Type: Encrypted ✅
+Environment: Production
+
+
+═══════════════════════════════════════════════════════════════
+  OPTIONAL - FOR LIVE TRADING (Add Later)
+═══════════════════════════════════════════════════════════════
+
+Variable 5 - BINANCE_API_KEY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: BINANCE_API_KEY
+Value: BLkD3r6prLMIojYxAAw0CsErUcMnhj7McuJ5XMiNjEOCIvowpo3LKYkHiCEBj9Kp
+Type: Encrypted ✅
+Environment: Production
+
+
+Variable 6 - BINANCE_SECRET_KEY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Variable name: BINANCE_SECRET_KEY
+Value: DHPAcQoRqp568J76RbcMsyKjcHoSvFqAZywYRwDtBSdmzmQdx6OV4pD0wH4dlEQK
+Type: Encrypted ✅
+Environment: Production
+
+
+═══════════════════════════════════════════════════════════════
+  QUICK LINKS
+═══════════════════════════════════════════════════════════════
+
+Functions Settings (KV, D1, R2 bindings):
+https://dash.cloudflare.com/pages/view/trade-m8-production/settings/functions
+
+Environment Variables (Secrets):
+https://dash.cloudflare.com/pages/view/trade-m8-production/settings/environment-variables
+
+
+═══════════════════════════════════════════════════════════════
+  TEST COMMANDS (Run After Configuration)
+═══════════════════════════════════════════════════════════════
+
+# Wait 1-2 minutes after saving, then test:
+
+curl https://trade-m8.app/api/health
+
+curl "https://trade-m8.app/api/market-analysis?coinId=bitcoin&days=14"
+
+cd /Users/Gee/trade-m8-live-app && bash scripts/test-production.sh
+
+
+═══════════════════════════════════════════════════════════════
+  CONFIGURATION SUMMARY
+═══════════════════════════════════════════════════════════════
+
+Total Bindings to Add: 5
+  - 3 KV bindings (CACHE, SESSIONS, TRADES)
+  - 1 D1 binding (DB)
+  - 1 R2 binding (STORAGE)
+
+Required Environment Variables: 4
+  - JWT_SECRET (encrypted)
+  - COINGECKO_API_KEY (encrypted)
+  - SUPABASE_URL (plain text)
+  - SUPABASE_KEY (encrypted)
+
+Optional Variables: 2
+  - BINANCE_API_KEY (for live trading)
+  - BINANCE_SECRET_KEY (for live trading)
+
+
+═══════════════════════════════════════════════════════════════
+  ⚠️  IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════
+
+1. Always select "Production" environment for variables
+2. Check "Encrypt" for all API keys and secrets
+3. Variable names are CASE-SENSITIVE
+4. KV namespace IDs must match exactly
+5. Wait 1-2 minutes after saving before testing
+6. Test health endpoint first to verify configuration
+
+
+═══════════════════════════════════════════════════════════════
+  ✅ COMPLETION CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Functions Settings Page:
+  ⬜ Added CACHE KV binding
+  ⬜ Added SESSIONS KV binding
+  ⬜ Added TRADES KV binding
+  ⬜ Added DB D1 binding
+  ⬜ Added STORAGE R2 binding
+  ⬜ Clicked "Save" for all bindings
+
+Environment Variables Page:
+  ⬜ Added JWT_SECRET (encrypted)
+  ⬜ Added COINGECKO_API_KEY (encrypted)
+  ⬜ Added SUPABASE_URL
+  ⬜ Added SUPABASE_KEY (encrypted)
+  ⬜ Clicked "Save" for all variables
+
+Testing:
+  ⬜ Waited 1-2 minutes
+  ⬜ Health endpoint returns 200 OK
+  ⬜ Market analysis works
+  ⬜ Test suite passes (13/13 tests)
+
+
+═══════════════════════════════════════════════════════════════
+  🎉 After completing all items above, your deployment will be
+     fully operational with all features working!
+═══════════════════════════════════════════════════════════════

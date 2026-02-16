@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { X, Plus, Settings2, TrendingUp, Shield, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Settings2, TrendingUp, Shield, DollarSign, Sparkles, Zap } from 'lucide-react';
 import api from '../lib/api';
+import { STRATEGIES } from '../lib/tradingStrategies';
+import { signalAggregator } from '../lib/signalAggregator';
 
 interface BotConfigProps {
   onClose: () => void;
@@ -10,30 +12,42 @@ interface BotConfigProps {
 const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
   const [formData, setFormData] = useState({
     name: '',
-    strategy: 'ensemble',
-    symbol: 'BTC/USD',
+    strategy: 'ai_momentum',
+    symbol: 'AUTO',
     exchange: 'binance',
     riskLevel: 'medium',
     maxPositionSize: 1000,
     stopLoss: 2,
     takeProfit: 5,
     trailingStop: false,
+    autoSelectAsset: true,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [recommendedAsset, setRecommendedAsset] = useState<string | null>(null);
 
-  const strategies = [
-    { value: 'ensemble', label: 'Neural Network Ensemble', description: 'AI-powered multi-model strategy' },
-    { value: 'fibonacci', label: 'Fibonacci Retracement', description: 'Classical technical analysis' },
-    { value: 'volatility', label: 'Volatility Breakout', description: 'High-frequency scalping' },
-    { value: 'momentum', label: 'Momentum Trading', description: 'Trend following strategy' },
-    { value: 'mean_reversion', label: 'Mean Reversion', description: 'Range-bound trading' },
-  ];
+  // Convert STRATEGIES object to array for dropdown
+  const strategies = Object.entries(STRATEGIES).map(([key, config]) => ({
+    value: key,
+    label: config.name,
+    description: config.description,
+    riskLevel: config.riskLevel,
+    autoSelect: config.autoSelectAsset
+  }));
 
   const symbols = [
-    'BTC/USD', 'ETH/USD', 'BNB/USD', 'SOL/USD', 'ADA/USD',
-    'EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD', 'XAG/USD'
+    { value: 'AUTO', label: '🤖 AI Auto-Select (Recommended)', category: 'AI' },
+    { value: 'BTC/USD', label: 'Bitcoin (BTC/USD)', category: 'Crypto' },
+    { value: 'ETH/USD', label: 'Ethereum (ETH/USD)', category: 'Crypto' },
+    { value: 'BNB/USD', label: 'Binance Coin (BNB/USD)', category: 'Crypto' },
+    { value: 'SOL/USD', label: 'Solana (SOL/USD)', category: 'Crypto' },
+    { value: 'EUR/USD', label: 'Euro (EUR/USD)', category: 'Forex' },
+    { value: 'GBP/USD', label: 'British Pound (GBP/USD)', category: 'Forex' },
+    { value: 'USD/JPY', label: 'Japanese Yen (USD/JPY)', category: 'Forex' },
+    { value: 'XAU/USD', label: 'Gold (XAU/USD)', category: 'Commodities' },
+    { value: 'XAG/USD', label: 'Silver (XAG/USD)', category: 'Commodities' },
   ];
 
   const exchanges = [
@@ -43,12 +57,40 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
     { value: 'bybit', label: 'Bybit' },
   ];
 
+  // Auto-analyze when strategy changes
+  useEffect(() => {
+    if (formData.symbol === 'AUTO') {
+      analyzeBestAsset();
+    }
+  }, [formData.strategy]);
+
+  const analyzeBestAsset = async () => {
+    setAnalyzing(true);
+    try {
+      const best = await signalAggregator.findBestOpportunity('all');
+      if (best) {
+        setRecommendedAsset(best.symbol);
+      }
+    } catch (error) {
+      console.error('Failed to analyze assets:', error);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    const newValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: newValue
     }));
+
+    // If symbol changed to AUTO, trigger analysis
+    if (name === 'symbol' && value === 'AUTO') {
+      analyzeBestAsset();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,18 +202,62 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
             </div>
           </div>
 
-          {/* Symbol and Exchange */}
+          {/* Symbol Selection with AI Recommendation */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              <Sparkles className="w-4 h-4 inline mr-2" />
+              Asset Selection
+            </label>
+            <select
+              name="symbol"
+              value={formData.symbol}
+              onChange={handleChange}
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              {symbols.map((symbol) => (
+                <option key={symbol.value} value={symbol.value}>
+                  {symbol.label}
+                </option>
+              ))}
+            </select>
+
+            {/* AI Recommendation Indicator */}
+            {formData.symbol === 'AUTO' && (
+              <div className="mt-3 p-3 glass-inner rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-semibold text-blue-300">AI Auto-Selection Enabled</span>
+                </div>
+                {analyzing ? (
+                  <div className="text-xs text-slate-400 flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400"></div>
+                    Analyzing market conditions...
+                  </div>
+                ) : recommendedAsset ? (
+                  <div className="text-xs text-emerald-400">
+                    ✓ Recommended: {recommendedAsset}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-400">
+                    Bot will automatically select the best asset based on current market conditions
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Exchange */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Trading Pair</label>
+              <label className="block text-sm font-medium mb-2">Exchange</label>
               <select
-                name="symbol"
-                value={formData.symbol}
+                name="exchange"
+                value={formData.exchange}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                {symbols.map(symbol => (
-                  <option key={symbol} value={symbol}>{symbol}</option>
+                {exchanges.map(exchange => (
+                  <option key={exchange.value} value={exchange.value}>{exchange.label}</option>
                 ))}
               </select>
             </div>

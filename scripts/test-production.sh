@@ -6,7 +6,7 @@
 set +e  # Continue on errors to see all results
 
 # Configuration
-BASE_URL="${1:-https://3ca60de6.trade-m8-production.pages.dev}"
+BASE_URL="${1:-https://trade-m8.app}"
 TIMESTAMP=$(date +%s)
 TEST_EMAIL="trader${TIMESTAMP}@trade-m8.app"
 TEST_PASSWORD="Secure123Pass"
@@ -76,8 +76,8 @@ echo -e "${BOLD}${MAGENTA}══════════════════
 # Test 1: Health Check
 test_start "1" "Health Endpoint"
 HEALTH=$(curl -s -w "\n%{http_code}" "$BASE_URL/api/health")
-HTTP_CODE=$(echo "$HEALTH" | tail -n1)
-BODY=$(echo "$HEALTH" | head -n-1)
+HTTP_CODE=$(echo "$HEALTH" | tail -n 1)
+BODY=$(echo "$HEALTH" | sed '$d')
 
 echo "Response: $BODY"
 echo "HTTP Status: $HTTP_CODE"
@@ -93,7 +93,7 @@ test_start "2" "CORS Configuration"
 CORS=$(curl -s -I -X OPTIONS "$BASE_URL/api/health" | grep -i "access-control")
 echo "$CORS"
 
-if echo "$CORS" | grep -q "Access-Control-Allow-Origin"; then
+if echo "$CORS" | grep -qi "access-control-allow-origin"; then
     test_pass "CORS headers configured correctly"
 else
     test_fail "CORS headers missing"

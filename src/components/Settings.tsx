@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Save, Key, Bell, Shield, User } from 'lucide-react';
+import { X, Save, Key, Bell, Shield, User, Zap } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
+import { useTradingMode } from '../lib/TradingModeContext';
 
 interface SettingsProps {
   onClose: () => void;
@@ -8,7 +9,8 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'api' | 'notifications' | 'security'>('profile');
+  const { mode, setMode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const [activeTab, setActiveTab] = useState<'trading' | 'profile' | 'api' | 'notifications' | 'security'>('trading');
 
   const [profile, setProfile] = useState({
     name: user?.name || '',
@@ -53,6 +55,7 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   const tabs = [
+    { id: 'trading', label: 'Trading Mode', icon: <Zap className="w-4 h-4" /> },
     { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
     { id: 'api', label: 'API Keys', icon: <Key className="w-4 h-4" /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
@@ -94,6 +97,134 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
           {/* Content */}
           <div className="flex-1 p-6 overflow-y-auto">
+            {activeTab === 'trading' && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Trading Mode</h3>
+                  <p className="text-sm text-slate-400 mb-6">
+                    Switch between paper trading (simulated) and live trading (real money)
+                  </p>
+
+                  <div className="space-y-4">
+                    {/* Paper Trading Option */}
+                    <div
+                      onClick={() => setMode('paper')}
+                      className={`glass-inner p-5 cursor-pointer transition-all duration-200 ${
+                        isPaperTrading
+                          ? 'bg-blue-600/20 border-2 border-blue-500/50 ring-2 ring-blue-500/20'
+                          : 'border border-slate-700/50 hover:bg-slate-700/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="bg-blue-500/20 text-blue-400 p-2 rounded-lg">
+                              <Zap className="w-5 h-5" />
+                            </div>
+                            <h4 className="text-lg font-semibold">Paper Trading</h4>
+                            {isPaperTrading && (
+                              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
+                                ACTIVE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-300 mb-3">
+                            Practice trading with virtual money. Perfect for testing strategies without risk.
+                          </p>
+                          <ul className="text-xs text-slate-400 space-y-1">
+                            <li>• No real money involved</li>
+                            <li>• Test strategies safely</li>
+                            <li>• Unlimited virtual funds</li>
+                            <li>• Real market data</li>
+                          </ul>
+                        </div>
+                        <div className="ml-4">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            isPaperTrading ? 'border-blue-500 bg-blue-500' : 'border-slate-600'
+                          }`}>
+                            {isPaperTrading && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live Trading Option */}
+                    <div
+                      onClick={() => {
+                        if (confirm('⚠️ IMPORTANT: Switching to LIVE TRADING mode will use REAL MONEY.\n\nMake sure you:\n✓ Have configured your exchange API keys\n✓ Understand the risks involved\n✓ Have tested your strategies in paper mode\n\nDo you want to continue?')) {
+                          setMode('live');
+                        }
+                      }}
+                      className={`glass-inner p-5 cursor-pointer transition-all duration-200 ${
+                        isLiveTrading
+                          ? 'bg-red-600/20 border-2 border-red-500/50 ring-2 ring-red-500/20'
+                          : 'border border-slate-700/50 hover:bg-slate-700/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="bg-red-500/20 text-red-400 p-2 rounded-lg">
+                              <Zap className="w-5 h-5" />
+                            </div>
+                            <h4 className="text-lg font-semibold">Live Trading</h4>
+                            {isLiveTrading && (
+                              <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full animate-pulse">
+                                LIVE
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-300 mb-3">
+                            Trade with real money on connected exchanges. Use with caution.
+                          </p>
+                          <ul className="text-xs text-slate-400 space-y-1">
+                            <li>• Real money trading</li>
+                            <li>• Actual profit and loss</li>
+                            <li>• Requires exchange API keys</li>
+                            <li>• Risk management essential</li>
+                          </ul>
+                        </div>
+                        <div className="ml-4">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            isLiveTrading ? 'border-red-500 bg-red-500' : 'border-slate-600'
+                          }`}>
+                            {isLiveTrading && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Warning Banner */}
+                    {isLiveTrading && (
+                      <div className="glass-inner p-4 bg-red-500/10 border border-red-500/30">
+                        <div className="flex items-start gap-3">
+                          <div className="text-red-400 mt-0.5">
+                            <Shield className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-red-300 mb-1">Live Trading Active</h4>
+                            <p className="text-sm text-red-200">
+                              You are currently in LIVE mode. All trades will use real money. Please ensure you have:
+                            </p>
+                            <ul className="text-xs text-red-200 mt-2 space-y-1">
+                              <li>✓ Configured risk management settings</li>
+                              <li>✓ Set appropriate stop-loss limits</li>
+                              <li>✓ Tested strategies in paper mode</li>
+                              <li>✓ Only trading with money you can afford to lose</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'profile' && (
               <div className="space-y-5">
                 <div>
