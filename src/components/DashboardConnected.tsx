@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import web3Service, { WalletInfo } from '../lib/web3';
 import BotConfig from './BotConfig';
+import SettingsModal from './Settings';
 import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
@@ -24,6 +25,7 @@ const DashboardConnected = () => {
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [showBotConfig, setShowBotConfig] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -189,7 +191,10 @@ const DashboardConnected = () => {
               <Plus className="w-3.5 h-3.5" />
               New Bot
             </button>
-            <button className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white"
+            >
               <Settings className="w-4.5 h-4.5" />
             </button>
             <button
@@ -334,6 +339,13 @@ const DashboardConnected = () => {
         <BotConfig
           onClose={() => setShowBotConfig(false)}
           onBotCreated={loadDashboardData}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>

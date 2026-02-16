@@ -1,0 +1,13 @@
+import os
+from cloudflare import Cloudflare
+
+client = Cloudflare(
+    api_token=os.environ.get("kae7k3KJvSdETK77zsSJ3oRaJSEVrqoPQcVQZ3B8"),  # This is the default and can be omitted
+)
+hostname = client.web3.hostnames.create(
+    zone_id="1b52be08a54f3ae13d738c9d8b9fc75d",
+    name="gateway.trade-m8.com",
+    target="ipfs",
+)
+print(hostname.id)
+
