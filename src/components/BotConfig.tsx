@@ -38,19 +38,52 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
   }));
 
   const symbols = [
-    { value: 'AUTO', label: '🤖 AI Auto-Select (Recommended)', category: 'AI' },
-    { value: 'BTC/USD', label: 'Bitcoin (BTC/USD)', category: 'Crypto' },
-    { value: 'ETH/USD', label: 'Ethereum (ETH/USD)', category: 'Crypto' },
-    { value: 'BNB/USD', label: 'Binance Coin (BNB/USD)', category: 'Crypto' },
-    { value: 'SOL/USD', label: 'Solana (SOL/USD)', category: 'Crypto' },
-    { value: 'EUR/USD', label: 'Euro (EUR/USD)', category: 'Forex' },
-    { value: 'GBP/USD', label: 'British Pound (GBP/USD)', category: 'Forex' },
-    { value: 'USD/JPY', label: 'Japanese Yen (USD/JPY)', category: 'Forex' },
-    { value: 'XAU/USD', label: 'Gold (XAU/USD)', category: 'Commodities' },
-    { value: 'XAG/USD', label: 'Silver (XAG/USD)', category: 'Commodities' },
+    // AI
+    { value: 'AUTO',       label: '🤖 AI Auto-Select (Recommended)', category: 'AI' },
+    // Crypto
+    { value: 'BTC/USD',    label: 'Bitcoin (BTC/USD)',          category: 'Crypto' },
+    { value: 'ETH/USD',    label: 'Ethereum (ETH/USD)',         category: 'Crypto' },
+    { value: 'BNB/USD',    label: 'Binance Coin (BNB/USD)',     category: 'Crypto' },
+    { value: 'SOL/USD',    label: 'Solana (SOL/USD)',           category: 'Crypto' },
+    { value: 'XRP/USD',    label: 'XRP (XRP/USD)',              category: 'Crypto' },
+    { value: 'ADA/USD',    label: 'Cardano (ADA/USD)',          category: 'Crypto' },
+    { value: 'DOGE/USD',   label: 'Dogecoin (DOGE/USD)',        category: 'Crypto' },
+    // Forex Majors
+    { value: 'EUR/USD',    label: 'Euro (EUR/USD)',             category: 'Forex' },
+    { value: 'GBP/USD',    label: 'British Pound (GBP/USD)',    category: 'Forex' },
+    { value: 'USD/JPY',    label: 'Japanese Yen (USD/JPY)',     category: 'Forex' },
+    { value: 'USD/CHF',    label: 'Swiss Franc (USD/CHF)',      category: 'Forex' },
+    { value: 'AUD/USD',    label: 'Australian Dollar (AUD/USD)', category: 'Forex' },
+    { value: 'USD/CAD',    label: 'Canadian Dollar (USD/CAD)',  category: 'Forex' },
+    { value: 'NZD/USD',    label: 'New Zealand Dollar (NZD/USD)', category: 'Forex' },
+    // Forex Minors
+    { value: 'EUR/GBP',    label: 'EUR/GBP',                   category: 'Forex' },
+    { value: 'EUR/JPY',    label: 'EUR/JPY',                   category: 'Forex' },
+    { value: 'GBP/JPY',    label: 'GBP/JPY',                   category: 'Forex' },
+    { value: 'EUR/AUD',    label: 'EUR/AUD',                   category: 'Forex' },
+    { value: 'AUD/JPY',    label: 'AUD/JPY',                   category: 'Forex' },
+    { value: 'EUR/CAD',    label: 'EUR/CAD',                   category: 'Forex' },
+    { value: 'GBP/AUD',    label: 'GBP/AUD',                   category: 'Forex' },
+    // Precious Metals
+    { value: 'XAU/USD',    label: 'Gold (XAU/USD)',             category: 'Commodities' },
+    { value: 'XAG/USD',    label: 'Silver (XAG/USD)',           category: 'Commodities' },
+    { value: 'XPT/USD',    label: 'Platinum (XPT/USD)',         category: 'Commodities' },
+    { value: 'XPD/USD',    label: 'Palladium (XPD/USD)',        category: 'Commodities' },
+    // Energy
+    { value: 'WTICO/USD',  label: 'WTI Crude Oil',             category: 'Commodities' },
+    { value: 'BCO/USD',    label: 'Brent Crude Oil',           category: 'Commodities' },
+    { value: 'NATGAS/USD', label: 'Natural Gas',               category: 'Commodities' },
+    // Indices
+    { value: 'US30/USD',   label: 'Dow Jones (US30)',          category: 'Indices' },
+    { value: 'SPX500/USD', label: 'S&P 500 (SPX500)',          category: 'Indices' },
+    { value: 'NAS100/USD', label: 'NASDAQ 100 (NAS100)',       category: 'Indices' },
+    { value: 'UK100/GBP',  label: 'FTSE 100 (UK100)',          category: 'Indices' },
+    { value: 'DE30/EUR',   label: 'DAX 40 (GER40)',            category: 'Indices' },
+    { value: 'JP225/USD',  label: 'Nikkei 225 (JP225)',        category: 'Indices' },
   ];
 
   const exchanges = [
+    // Crypto exchanges
     { value: 'binance',  label: 'Binance' },
     { value: 'bybit',    label: 'Bybit' },
     { value: 'kraken',   label: 'Kraken' },
@@ -62,7 +95,11 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
     { value: 'bitget',   label: 'Bitget' },
     { value: 'bitfinex', label: 'Bitfinex' },
     { value: 'gemini',   label: 'Gemini' },
-    { value: 'alpaca',   label: 'Alpaca (Stocks)' },
+    // Stocks / ETFs
+    { value: 'alpaca',   label: 'Alpaca (Stocks/ETFs)' },
+    // Forex brokers
+    { value: 'oanda',    label: 'OANDA (Forex/CFDs)' },
+    { value: 'exness',   label: 'Exness (Forex/MT5)' },
   ];
 
   // Auto-analyze when strategy changes
@@ -222,11 +259,17 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
               onChange={handleChange}
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
-              {symbols.map((symbol) => (
-                <option key={symbol.value} value={symbol.value}>
-                  {symbol.label}
-                </option>
-              ))}
+              {['AI', 'Crypto', 'Forex', 'Commodities', 'Indices'].map(cat => {
+                const group = symbols.filter(s => s.category === cat);
+                if (!group.length) return null;
+                return (
+                  <optgroup key={cat} label={cat}>
+                    {group.map(sym => (
+                      <option key={sym.value} value={sym.value}>{sym.label}</option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
 
             {/* AI Recommendation Indicator */}
@@ -255,33 +298,32 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
           </div>
 
           {/* Exchange */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Exchange</label>
-              <select
-                name="exchange"
-                value={formData.exchange}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              >
-                {exchanges.map(exchange => (
+          <div>
+            <label className="block text-sm font-medium mb-2">Exchange / Broker</label>
+            <select
+              name="exchange"
+              value={formData.exchange}
+              onChange={handleChange}
+              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              <optgroup label="Crypto Exchanges">
+                {exchanges.filter(e => !['alpaca','oanda','exness'].includes(e.value)).map(exchange => (
                   <option key={exchange.value} value={exchange.value}>{exchange.label}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Exchange</label>
-              <select
-                name="exchange"
-                value={formData.exchange}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              >
-                {exchanges.map(exchange => (
-                  <option key={exchange.value} value={exchange.value}>{exchange.label}</option>
-                ))}
-              </select>
-            </div>
+              </optgroup>
+              <optgroup label="Stocks / ETFs">
+                <option value="alpaca">Alpaca (Stocks/ETFs)</option>
+              </optgroup>
+              <optgroup label="Forex Brokers">
+                <option value="oanda">OANDA (Forex/CFDs)</option>
+                <option value="exness">Exness (Forex/MT5)</option>
+              </optgroup>
+            </select>
+            {(formData.exchange === 'oanda' || formData.exchange === 'exness') && (
+              <p className="text-xs text-blue-400 mt-2">
+                Forex broker selected — choose a Forex, Commodity, or Index symbol above.
+              </p>
+            )}
           </div>
 
           {/* Risk Management */}

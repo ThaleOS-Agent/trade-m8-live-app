@@ -59,8 +59,12 @@ export async function onRequest(context: any): Promise<Response> {
       }, corsHeaders);
     }
 
-    // Route API requests — pass algo-trading and live-trading to their dedicated Pages Functions
-    if (path.startsWith('/api/algo-trading') || path.startsWith('/api/live-trading')) {
+    // Route API requests — pass algo-trading, live-trading, and forex to their dedicated Pages Functions
+    if (
+      path.startsWith('/api/algo-trading') ||
+      path.startsWith('/api/live-trading') ||
+      path.startsWith('/api/forex')
+    ) {
       return next();
     }
 
