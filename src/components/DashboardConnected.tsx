@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, Wallet, LogOut, Plus } from 'lucide-react';
+import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, LogOut, Plus, ChevronDown, Wallet } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { useTradingMode } from '../lib/TradingModeContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
   const { user, logout } = useAuth();
-  const { mode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const { mode, setMode, isPaperTrading, isLiveTrading } = useTradingMode();
   const navigate = useNavigate();
 
   const [portfolio, setPortfolio] = useState<Portfolio>({
@@ -28,12 +28,24 @@ const DashboardConnected = () => {
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [showBotConfig, setShowBotConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [loading, setLoading] = useState(true);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadDashboardData();
-    const interval = setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+    const interval = setInterval(loadDashboardData, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
+        setShowSettingsMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadDashboardData = async () => {
@@ -165,17 +177,35 @@ const DashboardConnected = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {isLiveTrading ? (
-              <div className="flex items-center gap-2 bg-red-500/15 text-red-400 border border-red-500/25 px-3.5 py-1.5 rounded-lg animate-pulse">
-                <div className="status-dot bg-red-400"></div>
-                <span className="text-xs font-semibold tracking-wider">LIVE TRADING</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-blue-500/15 text-blue-400 border border-blue-500/25 px-3.5 py-1.5 rounded-lg">
-                <div className="status-dot bg-blue-400"></div>
-                <span className="text-xs font-semibold tracking-wider">PAPER TRADING</span>
-              </div>
-            )}
+            {/* Paper / Live trading toggle */}
+            <div className="flex items-center gap-1 bg-slate-800/60 border border-slate-700/50 rounded-lg p-1">
+              <button
+                onClick={() => setMode('paper')}
+                className={`text-[11px] font-semibold px-3 py-1 rounded-md transition-all ${
+                  isPaperTrading
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                PAPER
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('⚠️ Switch to LIVE TRADING? This uses real money.\n\nEnsure you have configured exchange API keys and tested your strategies in paper mode.')) {
+                    setMode('live');
+                  }
+                }}
+                className={`text-[11px] font-semibold px-3 py-1 rounded-md transition-all ${
+                  isLiveTrading
+                    ? 'bg-red-600 text-white shadow-sm animate-pulse'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                LIVE
+              </button>
+            </div>
+
+            {/* Connect Wallet */}
             {walletInfo ? (
               <button
                 onClick={handleWalletDisconnect}
@@ -193,6 +223,7 @@ const DashboardConnected = () => {
                 Connect Wallet
               </button>
             )}
+
             <button
               onClick={() => setShowBotConfig(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold transition-all"
@@ -200,18 +231,37 @@ const DashboardConnected = () => {
               <Plus className="w-3.5 h-3.5" />
               New Bot
             </button>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white"
-            >
-              <Settings className="w-4.5 h-4.5" />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="p-2.5 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-red-400"
-            >
-              <LogOut className="w-4.5 h-4.5" />
-            </button>
+
+            {/* Settings dropdown */}
+            <div className="relative" ref={settingsMenuRef}>
+              <button
+                onClick={() => setShowSettingsMenu(prev => !prev)}
+                className="flex items-center gap-1.5 p-2.5 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white"
+              >
+                <Settings className="w-4 h-4" />
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showSettingsMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showSettingsMenu && (
+                <div className="absolute right-0 top-full mt-2 w-48 glass-card border border-slate-700/60 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <button
+                    onClick={() => { setShowSettings(true); setShowSettingsMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <div className="border-t border-slate-700/50" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -274,7 +324,10 @@ const DashboardConnected = () => {
                             : 'bg-slate-600/40 text-slate-400 hover:bg-slate-600/60'
                         }`}
                       >
-                        {bot.status === 'running' ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        {bot.status === 'running'
+                        ? <Square className="w-3.5 h-3.5 fill-current" />
+                        : <Play className="w-3.5 h-3.5 fill-current" />
+                      }
                       </button>
                     </div>
                     <div className="grid grid-cols-3 gap-3">

@@ -268,7 +268,10 @@ const XQTradeM8Dashboard = () => {
                           : 'bg-slate-600/40 text-slate-400 hover:bg-slate-600/60'
                       }`}
                     >
-                      {bot.status === 'running' ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                      {bot.status === 'running'
+                        ? <Square className="w-3.5 h-3.5 fill-current" />
+                        : <Play className="w-3.5 h-3.5 fill-current" />
+                      }
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
