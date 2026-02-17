@@ -44,11 +44,6 @@ async function handleAIEnhancedTrading(
   }
 }
 
-// Add to routing
-if (path.includes('/api/live-trading/ai-execute')) {
-  return await handleAIEnhancedTrading(request, env, userData.userId, corsHeaders);
-}
-
 interface Env {
   DB: D1Database;
   BINANCE_API_KEY: string;
@@ -100,6 +95,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (path.includes('/api/live-trading/bot-status')) {
       return await handleBotStatus(request, env, userData.userId, corsHeaders);
+    }
+
+    if (path.includes('/api/live-trading/ai-execute')) {
+      return await handleAIEnhancedTrading(request, env, userData.userId, corsHeaders);
     }
 
     return jsonResponse({ error: 'Endpoint not found' }, corsHeaders, 404);
