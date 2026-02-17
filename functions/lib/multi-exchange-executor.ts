@@ -255,7 +255,7 @@ export class MultiExchangeExecutor {
     const slippage = order.slippage || 0.01; // 1% default
 
     // Get quote
-    const quote = await this.getDEXQuote(exchangeId, tokenIn Address, tokenOutAddress, amountIn);
+    const quote = await this.getDEXQuote(exchangeId, tokenInAddress, tokenOutAddress, amountIn);
 
     // Calculate minimum output with slippage
     const amountOutMinimum = quote.amountOut * (1 - slippage);
