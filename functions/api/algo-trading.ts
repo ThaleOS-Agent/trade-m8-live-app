@@ -220,7 +220,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
 
       const manager = getManager(env);
-      const cancelled = await manager.ccxt.cancelOrder(body.exchange, body.orderId, body.symbol);
+      const cancelled = await manager.cancelOrder(body.exchange, body.orderId, body.symbol);
       return json({ success: cancelled, orderId: body.orderId });
     }
 
@@ -230,7 +230,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       const symbol = url.searchParams.get('symbol') ?? 'BTC/USDT';
 
       const manager = getManager(env);
-      const ticker = await manager.ccxt.getTicker(exchange, symbol);
+      const ticker = await manager.getTicker(exchange, symbol);
       return json({ success: true, ticker });
     }
 
@@ -242,7 +242,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       const limit = parseInt(url.searchParams.get('limit') ?? '100');
 
       const manager = getManager(env);
-      const candles = await manager.ccxt.getOHLCV(exchange, symbol, timeframe, limit);
+      const candles = await manager.getOHLCV(exchange, symbol, timeframe, limit);
       return json({ success: true, candles, count: candles.length });
     }
 
