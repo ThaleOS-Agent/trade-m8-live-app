@@ -2,6 +2,52 @@
  * Live Trading API Endpoint for Cloudflare Workers
  * Handles real-time trading execution with risk management
  */
+import { TradingSystem } from '../lib/trading-system';
+
+// Store active trading systems per user
+const tradingSystems = new Map<string, TradingSystem>();
+
+function getTradingSystem(userId: string, initialCapital?: number): TradingSystem {
+  if (!tradingSystems.has(userId)) {
+    tradingSystems.set(userId, new TradingSystem(userId, initialCapital));
+  }
+  return tradingSystems.get(userId)!;
+}
+
+// Add new endpoint handler
+async function handleAIEnhancedTrading(
+  request: Request,
+  env: Env,
+  userId: string,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  try {
+    const data = await request.json() as any;
+    const { symbol, signal, confidence, amount, marketData } = data;
+
+    const system = getTradingSystem(userId, 10000);
+
+    const result = await system.executeTrade({
+      symbol,
+      baseSignal: signal,
+      baseConfidence: confidence,
+      amount,
+      marketData
+    });
+
+    return jsonResponse({ success: true, ...result }, corsHeaders);
+  } catch (error: any) {
+    return jsonResponse({
+      success: false,
+      error: error.message
+    }, corsHeaders, 500);
+  }
+}
+
+// Add to routing
+if (path.includes('/api/live-trading/ai-execute')) {
+  return await handleAIEnhancedTrading(request, env, userData.userId, corsHeaders);
+}
 
 interface Env {
   DB: D1Database;
