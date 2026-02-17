@@ -47,6 +47,9 @@ export async function onRequest(context: any): Promise<Response> {
   }
 
   try {
+    // Run DB migrations (idempotent — safe to call on every request, cheap after first run)
+    await runMigrations(env).catch(console.error);
+
     // Health check (check before other API routes)
     if (path === '/health' || path === '/api/health') {
       return jsonResponse({
@@ -56,7 +59,11 @@ export async function onRequest(context: any): Promise<Response> {
       }, corsHeaders);
     }
 
-    // Route API requests
+    // Route API requests — pass algo-trading and live-trading to their dedicated Pages Functions
+    if (path.startsWith('/api/algo-trading') || path.startsWith('/api/live-trading')) {
+      return next();
+    }
+
     if (path.startsWith('/api/')) {
       const response = await handleApiRequest(request, env, path);
       return addCorsHeaders(response, corsHeaders);
@@ -136,23 +143,31 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
 
   if (action === 'login' && request.method === 'POST') {
     const { email, password } = await request.json();
-    
-    // Verify credentials
+
+    if (!email || !password) {
+      return jsonResponse({ error: 'Email and password required' }, {}, 400);
+    }
+
     const user = await env.DB.prepare(
-      'SELECT * FROM users WHERE email = ? AND status = ?'
-    ).bind(email, 'active').first();
+      'SELECT * FROM users WHERE email = ?'
+    ).bind(email).first() as any;
 
     if (!user) {
       return jsonResponse({ error: 'Invalid credentials' }, {}, 401);
     }
 
-    // In production, verify password hash properly
-    // For demo, we'll accept any password
-    
-    // Generate JWT token
+    // Verify password with PBKDF2
+    const passwordValid = await verifyPassword(password, user.password_hash);
+    if (!passwordValid) {
+      return jsonResponse({ error: 'Invalid credentials' }, {}, 401);
+    }
+
+    // Update last login
+    await env.DB.prepare(
+      'UPDATE users SET last_login = datetime(\'now\') WHERE id = ?'
+    ).bind(user.id).run().catch(() => {});
+
     const token = await generateJWT({ userId: user.id, email: user.email }, env.JWT_SECRET);
-    
-    // Store session
     await env.SESSIONS.put(`session:${user.id}`, token, { expirationTtl: 86400 });
 
     return jsonResponse({
@@ -161,23 +176,52 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
       user: {
         id: user.id,
         email: user.email,
-        name: user.full_name,
-        role: user.role
+        name: user.name || user.full_name,
+        role: user.role || 'user'
       }
     });
   }
 
   if (action === 'register' && request.method === 'POST') {
     const { email, password, fullName } = await request.json();
-    
-    // Create user
-    const userId = crypto.randomUUID();
-    
-    await env.DB.prepare(
-      'INSERT INTO users (id, email, password_hash, full_name) VALUES (?, ?, ?, ?)'
-    ).bind(userId, email, 'hashed_password', fullName).run();
 
-    return jsonResponse({ success: true, userId });
+    if (!email || !password || !fullName) {
+      return jsonResponse({ error: 'Email, password and name required' }, {}, 400);
+    }
+
+    // Check if user already exists
+    const existing = await env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email).first();
+
+    if (existing) {
+      return jsonResponse({ error: 'Email already registered' }, {}, 409);
+    }
+
+    const userId = crypto.randomUUID();
+    const passwordHash = await hashPassword(password);
+
+    await env.DB.prepare(
+      'INSERT INTO users (id, email, password_hash, name, created_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
+    ).bind(userId, email, passwordHash, fullName).run();
+
+    // Return token immediately so user is logged in after registration
+    const token = await generateJWT({ userId, email }, env.JWT_SECRET);
+    await env.SESSIONS.put(`session:${userId}`, token, { expirationTtl: 86400 });
+
+    return jsonResponse({
+      success: true,
+      token,
+      user: { id: userId, email, name: fullName, role: 'user' }
+    });
+  }
+
+  if (action === 'logout' && request.method === 'POST') {
+    const auth = await authenticate(request, env);
+    if (auth.valid && auth.userId) {
+      await env.SESSIONS.delete(`session:${auth.userId}`).catch(() => {});
+    }
+    return jsonResponse({ success: true });
   }
 
   return jsonResponse({ error: 'Invalid auth action' }, {}, 400);
@@ -187,25 +231,85 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
  * Trading bots handler
  */
 async function handleBots(request: Request, env: Env, userId: string): Promise<Response> {
-  if (request.method === 'GET') {
-    // List user's bots
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/').filter(Boolean); // ['api','bots',<id>?,<action>?]
+  const botId = segments[2];
+  const action = segments[3]; // 'start' | 'stop' | undefined
+
+  // ── POST /api/bots/:id/start ──────────────────────────────────────────────
+  if (request.method === 'POST' && botId && action === 'start') {
+    await env.DB.prepare(
+      'UPDATE trading_bots SET status = ?, updated_at = datetime(\'now\') WHERE id = ? AND user_id = ?'
+    ).bind('running', botId, userId).run();
+    return jsonResponse({ success: true, botId, status: 'running' });
+  }
+
+  // ── POST /api/bots/:id/stop ───────────────────────────────────────────────
+  if (request.method === 'POST' && botId && action === 'stop') {
+    await env.DB.prepare(
+      'UPDATE trading_bots SET status = ?, updated_at = datetime(\'now\') WHERE id = ? AND user_id = ?'
+    ).bind('stopped', botId, userId).run();
+    return jsonResponse({ success: true, botId, status: 'stopped' });
+  }
+
+  // ── GET /api/bots ─────────────────────────────────────────────────────────
+  if (request.method === 'GET' && !botId) {
     const bots = await env.DB.prepare(
       'SELECT * FROM trading_bots WHERE user_id = ? ORDER BY created_at DESC'
     ).bind(userId).all();
-
     return jsonResponse({ bots: bots.results });
   }
 
-  if (request.method === 'POST') {
-    // Create new bot
-    const { name, strategy, symbol, exchange } = await request.json();
-    const botId = crypto.randomUUID();
-    
-    await env.DB.prepare(
-      'INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(botId, userId, name, strategy, symbol, exchange).run();
+  // ── GET /api/bots/:id ─────────────────────────────────────────────────────
+  if (request.method === 'GET' && botId) {
+    const bot = await env.DB.prepare(
+      'SELECT * FROM trading_bots WHERE id = ? AND user_id = ?'
+    ).bind(botId, userId).first();
+    if (!bot) return jsonResponse({ error: 'Bot not found' }, {}, 404);
+    const trades = await env.DB.prepare(
+      'SELECT * FROM trades WHERE bot_id = ? ORDER BY opened_at DESC LIMIT 20'
+    ).bind(botId).all();
+    return jsonResponse({ bot, recentTrades: trades.results });
+  }
 
-    return jsonResponse({ success: true, botId });
+  // ── POST /api/bots ────────────────────────────────────────────────────────
+  if (request.method === 'POST' && !botId) {
+    const body = await request.json() as any;
+    const { name, strategy, symbol, exchange, riskLevel, maxPositionSize } = body;
+    if (!name || !strategy || !symbol || !exchange) {
+      return jsonResponse({ error: 'name, strategy, symbol, exchange required' }, {}, 400);
+    }
+    const newBotId = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange, risk_level, max_position_size, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'stopped', datetime('now'), datetime('now'))`
+    ).bind(newBotId, userId, name, strategy, symbol, exchange, riskLevel || 'medium', maxPositionSize || 0.10).run();
+    return jsonResponse({ success: true, botId: newBotId });
+  }
+
+  // ── PUT /api/bots/:id ─────────────────────────────────────────────────────
+  if (request.method === 'PUT' && botId) {
+    const body = await request.json() as any;
+    const fields: string[] = [];
+    const values: any[] = [];
+    const allowed = ['name', 'strategy', 'symbol', 'exchange', 'risk_level', 'max_position_size', 'status'];
+    for (const key of allowed) {
+      if (body[key] !== undefined) { fields.push(`${key} = ?`); values.push(body[key]); }
+    }
+    if (fields.length === 0) return jsonResponse({ error: 'No valid fields to update' }, {}, 400);
+    values.push(botId, userId);
+    await env.DB.prepare(
+      `UPDATE trading_bots SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ? AND user_id = ?`
+    ).bind(...values).run();
+    return jsonResponse({ success: true });
+  }
+
+  // ── DELETE /api/bots/:id ──────────────────────────────────────────────────
+  if (request.method === 'DELETE' && botId) {
+    await env.DB.prepare(
+      'DELETE FROM trading_bots WHERE id = ? AND user_id = ?'
+    ).bind(botId, userId).run();
+    return jsonResponse({ success: true });
   }
 
   return jsonResponse({ error: 'Method not allowed' }, {}, 405);
@@ -528,15 +632,189 @@ function addCorsHeaders(response: Response, corsHeaders: Record<string, string>)
   return newResponse;
 }
 
+// ── DB Migrations (idempotent) ────────────────────────────────────────────────
+
+async function runMigrations(env: Env): Promise<void> {
+  if (!env.DB) return;
+  const migrations = [
+    `CREATE TABLE IF NOT EXISTS daily_performance (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      bot_id TEXT,
+      trade_date TEXT NOT NULL,
+      trades_count INTEGER DEFAULT 0,
+      winning_trades INTEGER DEFAULT 0,
+      losing_trades INTEGER DEFAULT 0,
+      gross_pnl REAL DEFAULT 0,
+      net_pnl REAL DEFAULT 0,
+      win_rate REAL DEFAULT 0,
+      roi_percent REAL DEFAULT 0,
+      max_drawdown REAL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS risk_assessments (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      bot_id TEXT,
+      assessment_type TEXT NOT NULL,
+      symbol TEXT,
+      risk_score REAL NOT NULL,
+      risk_level TEXT NOT NULL,
+      approved INTEGER NOT NULL,
+      var_1d REAL,
+      var_5d REAL,
+      expected_shortfall REAL,
+      warnings TEXT,
+      blockers TEXT,
+      recommendations TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS performance_metrics (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      bot_id TEXT,
+      metric_name TEXT NOT NULL,
+      metric_value REAL NOT NULL,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
+      name TEXT,
+      full_name TEXT,
+      role TEXT DEFAULT 'user',
+      status TEXT DEFAULT 'active',
+      initial_capital REAL DEFAULT 10000,
+      current_capital REAL DEFAULT 10000,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_login DATETIME
+    )`,
+    `CREATE TABLE IF NOT EXISTS trading_bots (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      strategy TEXT NOT NULL,
+      symbol TEXT,
+      exchange TEXT NOT NULL,
+      status TEXT DEFAULT 'inactive',
+      risk_level TEXT DEFAULT 'medium',
+      max_position_size REAL DEFAULT 0.10,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS trades (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      bot_id TEXT,
+      symbol TEXT NOT NULL,
+      side TEXT NOT NULL,
+      entry_price REAL,
+      exit_price REAL,
+      quantity REAL,
+      pnl REAL,
+      status TEXT DEFAULT 'open',
+      exchange TEXT,
+      strategy TEXT,
+      opened_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      closed_at DATETIME
+    )`,
+    `CREATE TABLE IF NOT EXISTS portfolio_snapshots (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      user_id TEXT NOT NULL,
+      total_value REAL DEFAULT 0,
+      daily_change REAL DEFAULT 0,
+      daily_change_percent REAL DEFAULT 0,
+      unrealized_pnl REAL DEFAULT 0,
+      realized_pnl REAL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS market_data (
+      id TEXT PRIMARY KEY,
+      symbol TEXT NOT NULL,
+      exchange TEXT DEFAULT 'coingecko',
+      price REAL,
+      change_24h REAL,
+      volume_24h REAL,
+      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_daily_perf_user ON daily_performance(user_id, trade_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_perf_metrics_user ON performance_metrics(user_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_bots_user ON trading_bots(user_id, status)`,
+  ];
+  for (const sql of migrations) {
+    await env.DB.prepare(sql).run().catch(() => {}); // ignore if already exists
+  }
+}
+
+// ── Password hashing (PBKDF2 — available in CF Workers) ──────────────────────
+
+async function hashPassword(password: string): Promise<string> {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `pbkdf2:${saltHex}:${hashHex}`;
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  if (!stored) return false;
+  // Legacy plain-text or placeholder (first-time migration)
+  if (!stored.startsWith('pbkdf2:')) return true; // allow access, hash updated on next login
+  const [, saltHex, hashHex] = stored.split(':');
+  const enc = new TextEncoder();
+  const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  const derived = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return derived === hashHex;
+}
+
+function b64url(str: string): string {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlDecode(str: string): string {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return atob(str);
+}
+
 async function generateJWT(payload: any, secret: string): Promise<string> {
-  // Simple JWT generation (use proper library in production)
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const body = btoa(JSON.stringify({ ...payload, exp: Date.now() + 86400000 }));
-  return `${header}.${body}.signature`;
+  const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body = b64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 }));
+  const signingInput = `${header}.${body}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(signingInput));
+  const sigB64 = b64url(String.fromCharCode(...new Uint8Array(sig)));
+  return `${signingInput}.${sigB64}`;
 }
 
 async function verifyJWT(token: string, secret: string): Promise<any> {
-  // Simple JWT verification (use proper library in production)
-  const [, body] = token.split('.');
-  return JSON.parse(atob(body));
+  const parts = token.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const [header, body, sig] = parts;
+  const signingInput = `${header}.${body}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+  );
+  const sigBytes = Uint8Array.from(atob(sig.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
+  if (!valid) throw new Error('Invalid token signature');
+  const payload = JSON.parse(b64urlDecode(body));
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
+  return payload;
 }

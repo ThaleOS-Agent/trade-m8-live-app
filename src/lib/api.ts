@@ -1,6 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://trade-m8.app';
+// In Cloudflare Pages the frontend and API are on the same origin — use relative URLs.
+// VITE_API_URL can override for local dev (e.g. http://localhost:8788).
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 class ApiService {
   private client: AxiosInstance;
