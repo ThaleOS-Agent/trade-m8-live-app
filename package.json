@@ -9,8 +9,13 @@
     "preview": "vite preview",
     "deploy": "wrangler pages deploy dist",
     "deploy:workers": "wrangler deploy",
+    "deploy:full": "bash scripts/deploy-cloudflare.sh",
     "db:migrate": "node scripts/migrate-database.js",
     "test": "vitest",
+    "test:production": "bash scripts/test-production.sh",
+    "test:e2e": "bash scripts/post-deploy-verify.sh",
+    "health": "bash scripts/health-monitor.sh https://trade-m8.app once",
+    "health:monitor": "bash scripts/health-monitor.sh https://trade-m8.app 300",
     "lint": "eslint src",
     "format": "prettier --write src"
   },

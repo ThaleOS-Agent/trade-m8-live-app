@@ -1,21 +1,28 @@
 # 🚀 XQ Trade M8 - AI-Powered Trading Platform
 
+![Deploy Status](https://github.com/ThaleOS-Agent/trade-m8-live-app/actions/workflows/deploy.yml/badge.svg)
+
 **Production-ready trading platform built on Cloudflare's edge infrastructure with advanced market analysis powered by CoinGecko API.**
 
 ## 📊 Live Demo
 
-**Production URL:** https://1018557f.trade-m8-production.pages.dev
+**Production URL:** https://trade-m8.app
+
+**Alternate URL:** https://1018557f.trade-m8-production.pages.dev
 
 ### Test the API:
 ```bash
 # Market Analysis with RSI
-curl "https://1018557f.trade-m8-production.pages.dev/api/market-analysis?coinId=bitcoin&days=14"
+curl "https://trade-m8.app/api/market-analysis?coinId=bitcoin&days=14"
 
-# Multi-coin Trading Signals  
-curl "https://1018557f.trade-m8-production.pages.dev/api/trading-signals?coins=bitcoin,ethereum,solana"
+# Multi-coin Trading Signals
+curl "https://trade-m8.app/api/trading-signals?coins=bitcoin,ethereum,solana"
 
 # Trading Opportunities
-curl "https://1018557f.trade-m8-production.pages.dev/api/opportunities"
+curl "https://trade-m8.app/api/opportunities"
+
+# Health Check
+npm run health
 ```
 
 ## ✨ Key Features
@@ -78,10 +85,41 @@ cp .env.local.example .env.local
 # Run locally
 npm run dev
 
-# Deploy to Cloudflare
+# Build for production
 npm run build
-wrangler pages deploy dist --project-name=trade-m8-production
+
+# Deploy to Cloudflare
+npm run deploy
+
+# Or use full deployment script
+npm run deploy:full
 ```
+
+## 🧪 Testing & Monitoring
+
+```bash
+# Run health check
+npm run health
+
+# Monitor health continuously (checks every 5 minutes)
+npm run health:monitor
+
+# Run production tests
+npm run test:production
+
+# Run comprehensive post-deployment verification
+npm run test:e2e
+```
+
+## 🔄 Automated Deployment
+
+This repository uses GitHub Actions for automatic deployment:
+
+- **Push to main** → Automatic deployment to production
+- **Pull requests** → Build verification (no deployment)
+- **Deployment time** → ~2-3 minutes
+
+See [.github/workflows/README.md](.github/workflows/README.md) for setup instructions.
 
 ## 📚 Documentation
 
