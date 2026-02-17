@@ -15,19 +15,47 @@ import { createAlgoEngine, AlgoConfig } from '../lib/algo-trading-engine';
 
 interface Env {
   DB: D1Database;
+  JWT_SECRET: string;
+  // Binance
   BINANCE_API_KEY: string;
   BINANCE_SECRET_KEY: string;
+  // Kraken
   KRAKEN_API_KEY: string;
   KRAKEN_PRIVATE_KEY: string;
+  // Bybit
   BYBIT_API_KEY: string;
   BYBIT_API_SECRET: string;
+  // KuCoin
   KUCOIN_KEY: string;
   KUCOIN_SECRET: string;
   KUCOIN_PASSPHRASE: string;
+  // Alpaca
   ALPACA_API_KEY: string;
   ALPACA_SECRET_KEY: string;
   ALPACA_PAPER: string;
-  JWT_SECRET: string;
+  // Coinbase Advanced Trade
+  COINBASE_API_KEY: string;
+  COINBASE_SECRET_KEY: string;
+  // OKX
+  OKX_API_KEY: string;
+  OKX_SECRET_KEY: string;
+  OKX_PASSPHRASE: string;
+  // Gate.io
+  GATEIO_API_KEY: string;
+  GATEIO_SECRET_KEY: string;
+  // MEXC
+  MEXC_API_KEY: string;
+  MEXC_SECRET_KEY: string;
+  // Bitget
+  BITGET_API_KEY: string;
+  BITGET_SECRET_KEY: string;
+  BITGET_PASSPHRASE: string;
+  // Bitfinex
+  BITFINEX_API_KEY: string;
+  BITFINEX_SECRET_KEY: string;
+  // Gemini
+  GEMINI_API_KEY: string;
+  GEMINI_SECRET_KEY: string;
 }
 
 const cors = {
@@ -49,6 +77,7 @@ function err(message: string, status = 400) {
 
 function getManager(env: Env) {
   return createExchangeManager({
+    // Original
     BINANCE_API_KEY: env.BINANCE_API_KEY,
     BINANCE_SECRET_KEY: env.BINANCE_SECRET_KEY,
     KRAKEN_API_KEY: env.KRAKEN_API_KEY,
@@ -61,6 +90,23 @@ function getManager(env: Env) {
     ALPACA_API_KEY: env.ALPACA_API_KEY,
     ALPACA_SECRET_KEY: env.ALPACA_SECRET_KEY,
     ALPACA_PAPER: env.ALPACA_PAPER,
+    // New
+    COINBASE_API_KEY: env.COINBASE_API_KEY,
+    COINBASE_SECRET_KEY: env.COINBASE_SECRET_KEY,
+    OKX_API_KEY: env.OKX_API_KEY,
+    OKX_SECRET_KEY: env.OKX_SECRET_KEY,
+    OKX_PASSPHRASE: env.OKX_PASSPHRASE,
+    GATEIO_API_KEY: env.GATEIO_API_KEY,
+    GATEIO_SECRET_KEY: env.GATEIO_SECRET_KEY,
+    MEXC_API_KEY: env.MEXC_API_KEY,
+    MEXC_SECRET_KEY: env.MEXC_SECRET_KEY,
+    BITGET_API_KEY: env.BITGET_API_KEY,
+    BITGET_SECRET_KEY: env.BITGET_SECRET_KEY,
+    BITGET_PASSPHRASE: env.BITGET_PASSPHRASE,
+    BITFINEX_API_KEY: env.BITFINEX_API_KEY,
+    BITFINEX_SECRET_KEY: env.BITFINEX_SECRET_KEY,
+    GEMINI_API_KEY: env.GEMINI_API_KEY,
+    GEMINI_SECRET_KEY: env.GEMINI_SECRET_KEY,
   });
 }
 

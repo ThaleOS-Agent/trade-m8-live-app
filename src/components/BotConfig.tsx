@@ -51,10 +51,18 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
   ];
 
   const exchanges = [
-    { value: 'binance', label: 'Binance' },
-    { value: 'coinbase', label: 'Coinbase' },
-    { value: 'kraken', label: 'Kraken' },
-    { value: 'bybit', label: 'Bybit' },
+    { value: 'binance',  label: 'Binance' },
+    { value: 'bybit',    label: 'Bybit' },
+    { value: 'kraken',   label: 'Kraken' },
+    { value: 'kucoin',   label: 'KuCoin' },
+    { value: 'coinbase', label: 'Coinbase Advanced' },
+    { value: 'okx',      label: 'OKX' },
+    { value: 'gateio',   label: 'Gate.io' },
+    { value: 'mexc',     label: 'MEXC' },
+    { value: 'bitget',   label: 'Bitget' },
+    { value: 'bitfinex', label: 'Bitfinex' },
+    { value: 'gemini',   label: 'Gemini' },
+    { value: 'alpaca',   label: 'Alpaca (Stocks)' },
   ];
 
   // Auto-analyze when strategy changes

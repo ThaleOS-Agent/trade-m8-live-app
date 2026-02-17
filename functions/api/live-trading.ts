@@ -3,6 +3,7 @@
  * Handles real-time trading execution with risk management
  */
 import { TradingSystem } from '../lib/trading-system';
+import { createExchangeManager } from '../lib/sdk-exchange-connector';
 
 // Store active trading systems per user
 const tradingSystems = new Map<string, TradingSystem>();
@@ -46,10 +47,48 @@ async function handleAIEnhancedTrading(
 
 interface Env {
   DB: D1Database;
+  JWT_SECRET: string;
+  COINGECKO_API_KEY: string;
+  // Binance
   BINANCE_API_KEY: string;
   BINANCE_SECRET_KEY: string;
-  COINGECKO_API_KEY: string;
-  JWT_SECRET: string;
+  // Kraken
+  KRAKEN_API_KEY: string;
+  KRAKEN_PRIVATE_KEY: string;
+  // Bybit
+  BYBIT_API_KEY: string;
+  BYBIT_API_SECRET: string;
+  // KuCoin
+  KUCOIN_KEY: string;
+  KUCOIN_SECRET: string;
+  KUCOIN_PASSPHRASE: string;
+  // Alpaca
+  ALPACA_API_KEY: string;
+  ALPACA_SECRET_KEY: string;
+  ALPACA_PAPER: string;
+  // Coinbase Advanced Trade
+  COINBASE_API_KEY: string;
+  COINBASE_SECRET_KEY: string;
+  // OKX
+  OKX_API_KEY: string;
+  OKX_SECRET_KEY: string;
+  OKX_PASSPHRASE: string;
+  // Gate.io
+  GATEIO_API_KEY: string;
+  GATEIO_SECRET_KEY: string;
+  // MEXC
+  MEXC_API_KEY: string;
+  MEXC_SECRET_KEY: string;
+  // Bitget
+  BITGET_API_KEY: string;
+  BITGET_SECRET_KEY: string;
+  BITGET_PASSPHRASE: string;
+  // Bitfinex
+  BITFINEX_API_KEY: string;
+  BITFINEX_SECRET_KEY: string;
+  // Gemini
+  GEMINI_API_KEY: string;
+  GEMINI_SECRET_KEY: string;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -148,31 +187,15 @@ async function handleTradeExecution(
       return jsonResponse({ error: 'Bot not found' }, corsHeaders, 404);
     }
 
-    // Execute trade based on exchange
-    let executionResult;
-    switch (bot.exchange) {
-      case 'binance':
-        executionResult = await executeBinanceTrade(env, {
-          symbol,
-          side,
-          amount,
-          orderType
-        });
-        break;
-      case 'coinbase':
-        executionResult = await executeCoinbaseTrade(env, {
-          symbol,
-          side,
-          amount,
-          orderType
-        });
-        break;
-      default:
-        return jsonResponse({
-          error: 'Unsupported exchange',
-          exchange: bot.exchange
-        }, corsHeaders, 400);
-    }
+    // Execute trade via unified ExchangeManager
+    const manager = buildExchangeManager(env);
+    const executionResult = await manager.placeOrder({
+      exchange: String(bot.exchange),
+      symbol,
+      side: side as 'buy' | 'sell',
+      type: (orderType ?? 'market') as 'market' | 'limit',
+      amount: parseFloat(String(amount)),
+    });
 
     if (!executionResult.success) {
       return jsonResponse({
@@ -355,39 +378,49 @@ async function handleBotStatus(
 }
 
 // Helper functions
-async function checkRiskLimits(env: Env, userId: string, amount: number) {
-  // Simplified risk check - implement full logic
-  const MAX_POSITION_SIZE = 10000; // $10k max per trade
 
+function buildExchangeManager(env: Env) {
+  return createExchangeManager({
+    BINANCE_API_KEY: env.BINANCE_API_KEY,
+    BINANCE_SECRET_KEY: env.BINANCE_SECRET_KEY,
+    KRAKEN_API_KEY: env.KRAKEN_API_KEY,
+    KRAKEN_PRIVATE_KEY: env.KRAKEN_PRIVATE_KEY,
+    BYBIT_API_KEY: env.BYBIT_API_KEY,
+    BYBIT_API_SECRET: env.BYBIT_API_SECRET,
+    KUCOIN_KEY: env.KUCOIN_KEY,
+    KUCOIN_SECRET: env.KUCOIN_SECRET,
+    KUCOIN_PASSPHRASE: env.KUCOIN_PASSPHRASE,
+    ALPACA_API_KEY: env.ALPACA_API_KEY,
+    ALPACA_SECRET_KEY: env.ALPACA_SECRET_KEY,
+    ALPACA_PAPER: env.ALPACA_PAPER,
+    COINBASE_API_KEY: env.COINBASE_API_KEY,
+    COINBASE_SECRET_KEY: env.COINBASE_SECRET_KEY,
+    OKX_API_KEY: env.OKX_API_KEY,
+    OKX_SECRET_KEY: env.OKX_SECRET_KEY,
+    OKX_PASSPHRASE: env.OKX_PASSPHRASE,
+    GATEIO_API_KEY: env.GATEIO_API_KEY,
+    GATEIO_SECRET_KEY: env.GATEIO_SECRET_KEY,
+    MEXC_API_KEY: env.MEXC_API_KEY,
+    MEXC_SECRET_KEY: env.MEXC_SECRET_KEY,
+    BITGET_API_KEY: env.BITGET_API_KEY,
+    BITGET_SECRET_KEY: env.BITGET_SECRET_KEY,
+    BITGET_PASSPHRASE: env.BITGET_PASSPHRASE,
+    BITFINEX_API_KEY: env.BITFINEX_API_KEY,
+    BITFINEX_SECRET_KEY: env.BITFINEX_SECRET_KEY,
+    GEMINI_API_KEY: env.GEMINI_API_KEY,
+    GEMINI_SECRET_KEY: env.GEMINI_SECRET_KEY,
+  });
+}
+
+async function checkRiskLimits(env: Env, userId: string, amount: number) {
+  const MAX_POSITION_SIZE = 10000; // $10k max per trade
   if (amount > MAX_POSITION_SIZE) {
     return {
       passed: false,
       reason: `Position size exceeds maximum of $${MAX_POSITION_SIZE}`
     };
   }
-
   return { passed: true };
-}
-
-async function executeBinanceTrade(env: Env, params: any) {
-  // Implement Binance API integration
-  // This is a placeholder - add actual Binance API calls
-  return {
-    success: true,
-    orderId: `binance_${Date.now()}`,
-    price: 50000,
-    quantity: params.amount
-  };
-}
-
-async function executeCoinbaseTrade(env: Env, params: any) {
-  // Implement Coinbase API integration
-  return {
-    success: true,
-    orderId: `coinbase_${Date.now()}`,
-    price: 50000,
-    quantity: params.amount
-  };
 }
 
 async function fetchCoinGeckoData(env: Env, symbols: string[]) {
