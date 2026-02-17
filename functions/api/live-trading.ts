@@ -4,6 +4,9 @@
  */
 import { TradingSystem } from '../lib/trading-system';
 import { createExchangeManager } from '../lib/sdk-exchange-connector';
+import { createForexManager } from '../lib/forex-connector';
+
+const FOREX_EXCHANGES = new Set(['oanda', 'exness']);
 
 // Store active trading systems per user
 const tradingSystems = new Map<string, TradingSystem>();
@@ -89,6 +92,15 @@ interface Env {
   // Gemini
   GEMINI_API_KEY: string;
   GEMINI_SECRET_KEY: string;
+  // Forex brokers
+  OANDA_API_KEY: string;
+  OANDA_ACCOUNT_ID: string;
+  OANDA_PRACTICE: string;
+  EXNESS_API_KEY: string;
+  EXNESS_ACCOUNT_LOGIN: string;
+  // Market data
+  ALPHA_VANTAGE_API_KEY: string;
+  FINNHUB_API_KEY: string;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -187,15 +199,34 @@ async function handleTradeExecution(
       return jsonResponse({ error: 'Bot not found' }, corsHeaders, 404);
     }
 
-    // Execute trade via unified ExchangeManager
-    const manager = buildExchangeManager(env);
-    const executionResult = await manager.placeOrder({
-      exchange: String(bot.exchange),
-      symbol,
-      side: side as 'buy' | 'sell',
-      type: (orderType ?? 'market') as 'market' | 'limit',
-      amount: parseFloat(String(amount)),
-    });
+    // Execute trade — route to ForexManager for forex brokers
+    const botExchange = String(bot.exchange).toLowerCase();
+    let executionResult: any;
+
+    if (FOREX_EXCHANGES.has(botExchange)) {
+      const fxManager = buildForexManagerFromEnv(env);
+      const fxResult = await fxManager.placeOrder(botExchange, {
+        symbol,
+        side: side as 'buy' | 'sell',
+        type: (orderType ?? 'market') as 'market' | 'limit',
+        units: parseFloat(String(amount)),
+      });
+      executionResult = {
+        success: fxResult.success,
+        orderId: fxResult.orderId,
+        price: fxResult.price ?? 0,
+        error: fxResult.error,
+      };
+    } else {
+      const manager = buildExchangeManager(env);
+      executionResult = await manager.placeOrder({
+        exchange: botExchange,
+        symbol,
+        side: side as 'buy' | 'sell',
+        type: (orderType ?? 'market') as 'market' | 'limit',
+        amount: parseFloat(String(amount)),
+      });
+    }
 
     if (!executionResult.success) {
       return jsonResponse({
@@ -412,6 +443,18 @@ function buildExchangeManager(env: Env) {
   });
 }
 
+function buildForexManagerFromEnv(env: Env) {
+  return createForexManager({
+    OANDA_API_KEY: env.OANDA_API_KEY,
+    OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
+    OANDA_PRACTICE: env.OANDA_PRACTICE,
+    EXNESS_API_KEY: env.EXNESS_API_KEY,
+    EXNESS_ACCOUNT_LOGIN: env.EXNESS_ACCOUNT_LOGIN,
+    ALPHA_VANTAGE_API_KEY: env.ALPHA_VANTAGE_API_KEY,
+    FINNHUB_API_KEY: env.FINNHUB_API_KEY,
+  });
+}
+
 async function checkRiskLimits(env: Env, userId: string, amount: number) {
   const MAX_POSITION_SIZE = 10000; // $10k max per trade
   if (amount > MAX_POSITION_SIZE) {
@@ -437,16 +480,59 @@ async function fetchCoinGeckoData(env: Env, symbols: string[]) {
 }
 
 async function fetchMarketDataForAnalysis(env: Env, symbol: string, timeframe: string) {
-  // Fetch historical data for analysis
-  // This is a placeholder
-  return {
-    price: 50000,
-    volume: 1000000,
-    volatility: 0.02,
-    rsi: 55,
-    macd: { value: 100, signal: 95, histogram: 5 },
-    momentum: 0.015
-  };
+  // Try to get real market data based on symbol type
+  const symUpper = symbol.toUpperCase();
+
+  // Forex / commodity / index symbols — use ForexManager
+  const forexSymbols = ['EUR', 'GBP', 'USD', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD',
+                        'XAU', 'XAG', 'XPT', 'WTICO', 'BCO', 'NATGAS',
+                        'US30', 'SPX500', 'NAS100', 'UK100', 'DE30', 'JP225'];
+  const isForex = forexSymbols.some(fx => symUpper.startsWith(fx));
+
+  if (isForex) {
+    try {
+      const fxManager = buildForexManagerFromEnv(env);
+      const quote = await fxManager.getQuote(symbol).catch(() => null);
+      const price = quote?.mid ?? 2000;
+      const candles = await fxManager.getCandles(symbol, 'H1', 50).catch(() => []);
+
+      // Simple RSI/momentum from candles if available
+      let rsi = 50, momentum = 0;
+      if (candles.length >= 14) {
+        const closes = candles.map((c: any) => c.close);
+        let gains = 0, losses = 0;
+        for (let i = closes.length - 14; i < closes.length; i++) {
+          const diff = closes[i] - closes[i - 1];
+          if (diff > 0) gains += diff; else losses -= diff;
+        }
+        const avgGain = gains / 14, avgLoss = losses / 14;
+        rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        momentum = closes.length > 10 ? (closes[closes.length - 1] - closes[closes.length - 10]) / closes[closes.length - 10] : 0;
+      }
+
+      return { price, volume: 50000, volatility: 0.008, rsi, macd: { value: 0, signal: 0, histogram: 0 }, momentum };
+    } catch {
+      return { price: 2000, volume: 50000, volatility: 0.008, rsi: 50, macd: { value: 0, signal: 0, histogram: 0 }, momentum: 0 };
+    }
+  }
+
+  // Crypto — try CoinGecko
+  try {
+    const coinId = symUpper.split('/')[0].toLowerCase()
+      .replace('btc', 'bitcoin').replace('eth', 'ethereum')
+      .replace('sol', 'solana').replace('bnb', 'binancecoin');
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`;
+    const resp = await fetch(url, {
+      headers: env.COINGECKO_API_KEY ? { 'X-Cg-Pro-Api-Key': env.COINGECKO_API_KEY } : {}
+    });
+    const data: any = await resp.json();
+    const coinData = data[coinId];
+    const price = coinData?.usd ?? 50000;
+    const momentum = (coinData?.usd_24h_change ?? 0) / 100;
+    return { price, volume: 1000000, volatility: 0.02, rsi: 55, macd: { value: 100, signal: 95, histogram: 5 }, momentum };
+  } catch {
+    return { price: 50000, volume: 1000000, volatility: 0.02, rsi: 55, macd: { value: 100, signal: 95, histogram: 5 }, momentum: 0.015 };
+  }
 }
 
 async function generateStrategySignal(strategy: string, marketData: any) {

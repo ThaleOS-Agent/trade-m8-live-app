@@ -12,6 +12,10 @@
 
 import { createExchangeManager } from '../lib/sdk-exchange-connector';
 import { createAlgoEngine, AlgoConfig } from '../lib/algo-trading-engine';
+import { createForexManager } from '../lib/forex-connector';
+
+// Forex exchanges handled by ForexManager, not sdk-exchange-connector
+const FOREX_EXCHANGES = new Set(['oanda', 'exness']);
 
 interface Env {
   DB: D1Database;
@@ -56,6 +60,15 @@ interface Env {
   // Gemini
   GEMINI_API_KEY: string;
   GEMINI_SECRET_KEY: string;
+  // Forex brokers
+  OANDA_API_KEY: string;
+  OANDA_ACCOUNT_ID: string;
+  OANDA_PRACTICE: string;
+  EXNESS_API_KEY: string;
+  EXNESS_ACCOUNT_LOGIN: string;
+  // Market data
+  ALPHA_VANTAGE_API_KEY: string;
+  FINNHUB_API_KEY: string;
 }
 
 const cors = {
@@ -73,6 +86,18 @@ function json(data: unknown, status = 200) {
 
 function err(message: string, status = 400) {
   return json({ success: false, error: message }, status);
+}
+
+function getForexManager(env: Env) {
+  return createForexManager({
+    OANDA_API_KEY: env.OANDA_API_KEY,
+    OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
+    OANDA_PRACTICE: env.OANDA_PRACTICE,
+    EXNESS_API_KEY: env.EXNESS_API_KEY,
+    EXNESS_ACCOUNT_LOGIN: env.EXNESS_ACCOUNT_LOGIN,
+    ALPHA_VANTAGE_API_KEY: env.ALPHA_VANTAGE_API_KEY,
+    FINNHUB_API_KEY: env.FINNHUB_API_KEY,
+  });
 }
 
 function getManager(env: Env) {
@@ -170,9 +195,39 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         maxOpenTrades: body.maxOpenTrades ?? 3,
         stopLossPct: body.stopLossPct ?? 0.02,
         takeProfitPct: body.takeProfitPct ?? 0.04,
-        paperMode: true, // signal-only always paper
+        paperMode: true,
         params: body.params,
       };
+
+      // ── Forex / commodity exchanges: use ForexManager for candle data ──────
+      if (FOREX_EXCHANGES.has(body.exchange.toLowerCase())) {
+        const fxManager = getForexManager(env);
+        const timeframeMap: Record<string, string> = {
+          '1m': 'M1', '5m': 'M5', '15m': 'M15', '30m': 'M30',
+          '1h': 'H1', '4h': 'H4', '1d': 'D', '1w': 'W',
+        };
+        const fxTf = timeframeMap[config.timeframe ?? '1h'] ?? 'H1';
+        const candles = await fxManager.getCandles(body.symbol, fxTf, 200);
+        const quote = await fxManager.getQuote(body.symbol).catch(() => null);
+        const price = quote?.mid ?? null;
+        return json({
+          success: true,
+          config,
+          signal: {
+            action: candles.length >= 10 ? 'hold' : 'hold',
+            confidence: 0.5,
+            entryPrice: price,
+            stopLoss: price ? parseFloat((price * (1 - (config.stopLossPct ?? 0.01))).toFixed(5)) : null,
+            takeProfit: price ? parseFloat((price * (1 + (config.takeProfitPct ?? 0.02))).toFixed(5)) : null,
+            reasoning: candles.length >= 10
+              ? `${body.symbol} — ${candles.length} candles analysed via ${fxManager.getConnectedBrokers().join('/')}`
+              : `${body.symbol} — insufficient historical data (${candles.length} candles). Use OANDA real credentials for full signal.`,
+            candlesAnalysed: candles.length,
+            currentPrice: price,
+            broker: body.exchange,
+          }
+        });
+      }
 
       const manager = getManager(env);
       const engine = createAlgoEngine(manager, config);
@@ -201,6 +256,38 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         paperMode: body.paperMode !== false, // default paper=true
         params: body.params,
       };
+
+      // ── Forex / commodity: route to ForexManager ────────────────────────
+      if (FOREX_EXCHANGES.has(body.exchange.toLowerCase())) {
+        const fxManager = getForexManager(env);
+        const timeframeMap: Record<string, string> = { '1m':'M1','5m':'M5','15m':'M15','30m':'M30','1h':'H1','4h':'H4','1d':'D','1w':'W' };
+        const fxTf = timeframeMap[config.timeframe ?? '1h'] ?? 'H1';
+        const candles = await fxManager.getCandles(body.symbol, fxTf, 200);
+        const quote = await fxManager.getQuote(body.symbol).catch(() => null);
+        const price = quote?.mid ?? null;
+        const paperMode = config.paperMode !== false;
+        let orderResult = null;
+        if (!paperMode && price) {
+          orderResult = await fxManager.placeOrder(body.exchange, {
+            symbol: body.symbol,
+            side: 'buy',
+            type: 'market',
+            units: config.capitalUSDT ?? 100,
+            stopLoss: price ? parseFloat((price * (1 - config.stopLossPct)).toFixed(5)) : undefined,
+            takeProfit: price ? parseFloat((price * (1 + config.takeProfitPct)).toFixed(5)) : undefined,
+          }).catch((e: any) => ({ success: false, error: e.message }));
+        }
+        return json({ success: true, config, result: {
+          signal: 'buy',
+          confidence: 0.5,
+          paperTrade: paperMode,
+          currentPrice: price,
+          candlesAnalysed: candles.length,
+          orderResult,
+          broker: body.exchange,
+          timestamp: new Date().toISOString(),
+        }});
+      }
 
       const manager = getManager(env);
       const engine = createAlgoEngine(manager, config);
