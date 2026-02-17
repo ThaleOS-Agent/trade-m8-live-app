@@ -1,0 +1,29 @@
+[
+  {
+    "strategy": "technical_master",
+    "ai": false,
+    "winRate": 73.52941176470588,
+    "return": 2.4431780739800706,
+    "sharpe": 8.55778792081343,
+    "maxDrawdown": 0.0023442488645166854,
+    "trades": 34
+  },
+  {
+    "strategy": "technical_master",
+    "ai": true,
+    "winRate": 74.35897435897436,
+    "return": 4.359414012566285,
+    "sharpe": 12.752451608160866,
+    "maxDrawdown": 0.0028782127465872874,
+    "trades": 39
+  },
+  {
+    "strategy": "ensemble",
+    "ai": true,
+    "winRate": 58.77192982456141,
+    "return": 2.5208418322749457,
+    "sharpe": 2.493150996373321,
+    "maxDrawdown": 0.022113586202430768,
+    "trades": 114
+  }
+]
