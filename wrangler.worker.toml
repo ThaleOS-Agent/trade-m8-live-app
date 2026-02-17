@@ -1,21 +1,27 @@
-# XQ Trade M8 — Cloudflare Pages + Workers Configuration
-# Canonical project: trade-m8-live-app (trade-m8.app)
-name = "trade-m8-live-app"
-pages_build_output_dir = "dist"
+# XQ Trade M8 — Scheduled Worker Configuration
+# This Worker runs alongside the Pages project and handles:
+#   - Scheduled market data updates (every 5 minutes)
+#   - Scheduled bot status checks (every minute)
+#   - Durable Objects: TradingEngine, MarketData
+#
+# Deploy with: npx wrangler deploy --config wrangler.worker.toml
+
+name = "trade-m8-worker"
+main = "functions/workers/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # ==============================================================================
-# ENVIRONMENT VARIABLES
-# All secrets are set via `wrangler pages secret put` (already configured)
+# CRON TRIGGERS
 # ==============================================================================
-[vars]
-ENVIRONMENT = "production"
-LOG_LEVEL = "info"
-API_VERSION = "v1"
+[triggers]
+crons = [
+  "*/5 * * * *",   # Every 5 minutes: update market data
+  "* * * * *"      # Every minute: check bot statuses
+]
 
 # ==============================================================================
-# D1 DATABASE
+# D1 DATABASE (same as Pages project)
 # ==============================================================================
 [[d1_databases]]
 binding = "DB"
@@ -23,7 +29,7 @@ database_name = "xq-trade-m8-db"
 database_id = "263ca9ce-3d2d-4514-be1a-902c74d20803"
 
 # ==============================================================================
-# KV NAMESPACES
+# KV NAMESPACES (same as Pages project)
 # ==============================================================================
 [[kv_namespaces]]
 binding = "CACHE"
@@ -38,8 +44,23 @@ binding = "TRADES"
 id = "94f18f6e58d34fc38a4023f370142773"
 
 # ==============================================================================
-# R2 BUCKET
+# R2 BUCKET (same as Pages project)
 # ==============================================================================
 [[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "trade-m8-assets"
+
+# ==============================================================================
+# DURABLE OBJECTS
+# ==============================================================================
+[[durable_objects.bindings]]
+name = "TRADING_ENGINE"
+class_name = "TradingEngine"
+
+[[durable_objects.bindings]]
+name = "MARKET_DATA"
+class_name = "MarketDataStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TradingEngine", "MarketDataStore"]

@@ -1,10 +1,17 @@
 /**
- * XQ Trade M8 - Main Cloudflare Worker
- * Handles all API requests and trading logic
+ * XQ Trade M8 — Scheduled Worker
+ *
+ * Responsibilities:
+ *   - Cron: update market data every 5 minutes
+ *   - Cron: check running bot statuses every minute
+ *   - Durable Objects: TradingEngine (per-user stateful trading sessions)
+ *   - Durable Objects: MarketDataStore (live price cache with SQLite)
+ *
+ * Deployed separately from Pages via wrangler.worker.toml
+ * Shares the same D1, KV, and R2 bindings as the Pages project.
  */
 
-// Environment interface
-interface Env {
+export interface Env {
   DB: D1Database;
   CACHE: KVNamespace;
   SESSIONS: KVNamespace;
@@ -12,373 +19,265 @@ interface Env {
   STORAGE: R2Bucket;
   TRADING_ENGINE: DurableObjectNamespace;
   MARKET_DATA: DurableObjectNamespace;
-  
-  // Secrets
-  SUPABASE_URL: string;
-  SUPABASE_KEY: string;
   JWT_SECRET: string;
   COINGECKO_API_KEY: string;
 }
 
-// Main Worker export
+// ============================================================================
+// MAIN WORKER EXPORT
+// ============================================================================
 export default {
+  /**
+   * HTTP handler — proxied requests to this worker (optional, for direct use)
+   */
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    const path = url.pathname;
 
-    // CORS headers
-    const corsHeaders = {
+    const cors = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
-    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, { headers: cors });
     }
 
-    try {
-      // Route API requests
-      if (path.startsWith('/api/')) {
-        const response = await handleApiRequest(request, env, path);
-        return addCorsHeaders(response, corsHeaders);
-      }
-
-      // Health check
-      if (path === '/health' || path === '/api/health') {
-        return jsonResponse({ 
-          status: 'healthy', 
-          version: '1.0.0',
-          timestamp: new Date().toISOString()
-        }, corsHeaders);
-      }
-
-      // Default response
-      return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
-
-    } catch (error) {
-      console.error('Worker error:', error);
-      return jsonResponse({ 
-        error: 'Internal server error',
-        message: error.message 
-      }, corsHeaders, 500);
+    if (url.pathname === '/health') {
+      return json({ status: 'healthy', worker: 'trade-m8-worker', timestamp: new Date().toISOString() }, cors);
     }
+
+    return json({ error: 'Not found' }, cors, 404);
   },
 
-  // Scheduled Worker for periodic tasks
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    console.log('Running scheduled task:', event.cron);
-    
-    // Update market data every 5 minutes
-    ctx.waitUntil(updateMarketData(env));
-    
-    // Check trading bot statuses
-    ctx.waitUntil(checkTradingBots(env));
+  // Cron handler — triggered by wrangler.worker.toml cron schedule
+  // "every-5-min" → update market data
+  // "every-min"   → check bot statuses
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const cron = event.cron;
+    console.log(`[trade-m8-worker] Cron fired: ${cron} at ${new Date().toISOString()}`);
+
+    if (cron === '*/5 * * * *') {
+      ctx.waitUntil(updateMarketData(env));
+    }
+
+    if (cron === '* * * * *') {
+      ctx.waitUntil(checkTradingBots(env));
+    }
   },
 };
 
-/**
- * Handle API requests
- */
-async function handleApiRequest(request: Request, env: Env, path: string): Promise<Response> {
-  const method = request.method;
-  const segments = path.split('/').filter(Boolean);
-  const endpoint = segments[1]; // After '/api/'
+// ============================================================================
+// DURABLE OBJECT: TradingEngine
+// Manages stateful trading session per user (isolated, persistent)
+// ============================================================================
+export class TradingEngine {
+  private state: DurableObjectState;
+  private env: Env;
 
-  // Authentication middleware
-  const auth = await authenticate(request, env);
-  
-  // Public endpoints
-  const publicEndpoints = ['auth', 'health', 'market'];
-  const requiresAuth = !publicEndpoints.includes(endpoint);
-  
-  if (requiresAuth && !auth.valid) {
-    return jsonResponse({ error: 'Unauthorized' }, {}, 401);
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+    this.env = env;
   }
 
-  // Route to appropriate handler
-  switch (endpoint) {
-    case 'auth':
-      return handleAuth(request, env);
-    
-    case 'bots':
-      return handleBots(request, env, auth.userId);
-    
-    case 'trades':
-      return handleTrades(request, env, auth.userId);
-    
-    case 'portfolio':
-      return handlePortfolio(request, env, auth.userId);
-    
-    case 'market':
-      return handleMarketData(request, env);
-    
-    case 'analytics':
-      return handleAnalytics(request, env, auth.userId);
-    
-    default:
-      return jsonResponse({ error: 'Endpoint not found' }, {}, 404);
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    if (url.pathname === '/status') {
+      const status = (await this.state.storage.get('status')) || 'idle';
+      const lastTrade = (await this.state.storage.get('lastTrade')) || null;
+      const activeBots = (await this.state.storage.get('activeBots')) || 0;
+      return json({ status, lastTrade, activeBots }, cors);
+    }
+
+    if (url.pathname === '/start' && request.method === 'POST') {
+      await this.state.storage.put('status', 'running');
+      await this.state.storage.put('startedAt', new Date().toISOString());
+      return json({ success: true, status: 'running' }, cors);
+    }
+
+    if (url.pathname === '/stop' && request.method === 'POST') {
+      await this.state.storage.put('status', 'stopped');
+      await this.state.storage.put('stoppedAt', new Date().toISOString());
+      return json({ success: true, status: 'stopped' }, cors);
+    }
+
+    if (url.pathname === '/record-trade' && request.method === 'POST') {
+      const trade = await request.json() as Record<string, unknown>;
+      await this.state.storage.put('lastTrade', JSON.stringify(trade));
+      const count = ((await this.state.storage.get<number>('tradeCount')) || 0) + 1;
+      await this.state.storage.put('tradeCount', count);
+      return json({ success: true, tradeCount: count }, cors);
+    }
+
+    return json({ error: 'Not found' }, cors, 404);
   }
 }
 
-/**
- * Authentication handler
- */
-async function handleAuth(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url);
-  const action = url.pathname.split('/').pop();
+// ============================================================================
+// DURABLE OBJECT: MarketDataStore
+// Live price cache backed by Durable Object SQLite storage
+// ============================================================================
+export class MarketDataStore {
+  private state: DurableObjectState;
+  private env: Env;
 
-  if (action === 'login' && request.method === 'POST') {
-    const { email, password } = await request.json();
-    
-    // Verify credentials
-    const user = await env.DB.prepare(
-      'SELECT * FROM users WHERE email = ? AND status = ?'
-    ).bind(email, 'active').first();
-
-    if (!user) {
-      return jsonResponse({ error: 'Invalid credentials' }, {}, 401);
-    }
-
-    // In production, verify password hash properly
-    // For demo, we'll accept any password
-    
-    // Generate JWT token
-    const token = await generateJWT({ userId: user.id, email: user.email }, env.JWT_SECRET);
-    
-    // Store session
-    await env.SESSIONS.put(`session:${user.id}`, token, { expirationTtl: 86400 });
-
-    return jsonResponse({
-      success: true,
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.full_name,
-        role: user.role
-      }
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+    this.env = env;
+    this.state.blockConcurrencyWhile(async () => {
+      await this.state.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS prices (
+          symbol TEXT PRIMARY KEY,
+          price REAL NOT NULL,
+          change_24h REAL,
+          updated_at TEXT NOT NULL
+        )
+      `);
     });
   }
 
-  if (action === 'register' && request.method === 'POST') {
-    const { email, password, fullName } = await request.json();
-    
-    // Create user
-    const userId = crypto.randomUUID();
-    
-    await env.DB.prepare(
-      'INSERT INTO users (id, email, password_hash, full_name) VALUES (?, ?, ?, ?)'
-    ).bind(userId, email, 'hashed_password', fullName).run();
-
-    return jsonResponse({ success: true, userId });
-  }
-
-  return jsonResponse({ error: 'Invalid auth action' }, {}, 400);
-}
-
-/**
- * Trading bots handler
- */
-async function handleBots(request: Request, env: Env, userId: string): Promise<Response> {
-  if (request.method === 'GET') {
-    // List user's bots
-    const bots = await env.DB.prepare(
-      'SELECT * FROM trading_bots WHERE user_id = ? ORDER BY created_at DESC'
-    ).bind(userId).all();
-
-    return jsonResponse({ bots: bots.results });
-  }
-
-  if (request.method === 'POST') {
-    // Create new bot
-    const { name, strategy, symbol, exchange } = await request.json();
-    const botId = crypto.randomUUID();
-    
-    await env.DB.prepare(
-      'INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(botId, userId, name, strategy, symbol, exchange).run();
-
-    return jsonResponse({ success: true, botId });
-  }
-
-  return jsonResponse({ error: 'Method not allowed' }, {}, 405);
-}
-
-/**
- * Trades handler
- */
-async function handleTrades(request: Request, env: Env, userId: string): Promise<Response> {
-  if (request.method === 'GET') {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '100');
-    
-    const trades = await env.DB.prepare(
-      'SELECT * FROM trades WHERE user_id = ? ORDER BY opened_at DESC LIMIT ?'
-    ).bind(userId, limit).all();
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
 
-    return jsonResponse({ trades: trades.results });
-  }
+    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
-  return jsonResponse({ error: 'Method not allowed' }, {}, 405);
-}
+    // GET /prices — return all cached prices
+    if (url.pathname === '/prices' && request.method === 'GET') {
+      const rows = this.state.storage.sql.exec('SELECT * FROM prices ORDER BY updated_at DESC').toArray();
+      return json({ prices: rows, timestamp: new Date().toISOString() }, cors);
+    }
 
-/**
- * Portfolio handler
- */
-async function handlePortfolio(request: Request, env: Env, userId: string): Promise<Response> {
-  // Get latest portfolio snapshot
-  const portfolio = await env.DB.prepare(
-    'SELECT * FROM portfolio_snapshots WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
-  ).bind(userId).first();
+    // POST /update — upsert price data
+    if (url.pathname === '/update' && request.method === 'POST') {
+      const { symbol, price, change_24h } = await request.json() as {
+        symbol: string;
+        price: number;
+        change_24h: number;
+      };
+      const now = new Date().toISOString();
+      this.state.storage.sql.exec(
+        `INSERT INTO prices (symbol, price, change_24h, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(symbol) DO UPDATE SET
+           price = excluded.price,
+           change_24h = excluded.change_24h,
+           updated_at = excluded.updated_at`,
+        symbol, price, change_24h, now
+      );
+      return json({ success: true }, cors);
+    }
 
-  // Get active trades
-  const activeTrades = await env.DB.prepare(
-    'SELECT COUNT(*) as count, SUM(pnl) as total_pnl FROM trades WHERE user_id = ? AND status = ?'
-  ).bind(userId, 'open').first();
-
-  return jsonResponse({
-    portfolio,
-    activeTrades: activeTrades.count,
-    unrealizedPnL: activeTrades.total_pnl || 0
-  });
-}
-
-/**
- * Market data handler
- */
-async function handleMarketData(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url);
-  const symbols = url.searchParams.get('symbols')?.split(',') || [];
-  
-  // Get cached market data
-  const marketData = await env.DB.prepare(
-    `SELECT * FROM market_data WHERE symbol IN (${symbols.map(() => '?').join(',')}) 
-     AND updated_at > strftime('%s', 'now', '-5 minutes')`
-  ).bind(...symbols).all();
-
-  return jsonResponse({ marketData: marketData.results });
-}
-
-/**
- * Analytics handler
- */
-async function handleAnalytics(request: Request, env: Env, userId: string): Promise<Response> {
-  // Get performance metrics
-  const metrics = await env.DB.prepare(
-    'SELECT * FROM performance_metrics WHERE user_id = ? ORDER BY created_at DESC LIMIT 100'
-  ).bind(userId).all();
-
-  // Get daily performance
-  const dailyPerf = await env.DB.prepare(
-    'SELECT * FROM daily_performance WHERE user_id = ? ORDER BY trade_date DESC LIMIT 30'
-  ).bind(userId).all();
-
-  return jsonResponse({
-    metrics: metrics.results,
-    dailyPerformance: dailyPerf.results
-  });
-}
-
-/**
- * Authenticate request
- */
-async function authenticate(request: Request, env: Env): Promise<{ valid: boolean; userId?: string }> {
-  const authHeader = request.headers.get('Authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { valid: false };
-  }
-
-  const token = authHeader.substring(7);
-  
-  try {
-    const payload = await verifyJWT(token, env.JWT_SECRET);
-    return { valid: true, userId: payload.userId };
-  } catch {
-    return { valid: false };
+    return json({ error: 'Not found' }, cors, 404);
   }
 }
 
-/**
- * Update market data (scheduled task)
- */
+// ============================================================================
+// SCHEDULED TASK: Update market data from CoinGecko
+// ============================================================================
 async function updateMarketData(env: Env): Promise<void> {
-  console.log('Updating market data...');
-  
-  // Fetch from CoinGecko
-  const symbols = ['bitcoin', 'ethereum', 'cardano'];
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${symbols.join(',')}&vs_currencies=usd&include_24hr_change=true`;
-  
-  const response = await fetch(url, {
-    headers: { 'X-Cg-Pro-Api-Key': env.COINGECKO_API_KEY }
-  });
-  
-  const data = await response.json();
-  
-  // Update database
-  for (const [symbol, info] of Object.entries(data)) {
-    await env.DB.prepare(
-      'INSERT OR REPLACE INTO market_data (id, symbol, exchange, price, change_24h, updated_at) VALUES (?, ?, ?, ?, ?, strftime(\'%s\', \'now\'))'
-    ).bind(
-      `${symbol}-coingecko`,
-      symbol.toUpperCase(),
-      'coingecko',
-      info.usd,
-      info.usd_24h_change
-    ).run();
+  const coins = ['bitcoin', 'ethereum', 'cardano', 'solana', 'binancecoin'];
+  const ids = coins.join(',');
+
+  try {
+    const resp = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      {
+        headers: env.COINGECKO_API_KEY
+          ? { 'x-cg-pro-api-key': env.COINGECKO_API_KEY }
+          : {},
+        cf: { cacheTtl: 60, cacheEverything: true },
+      }
+    );
+
+    if (!resp.ok) {
+      console.error(`[market-update] CoinGecko error: ${resp.status}`);
+      return;
+    }
+
+    const data = await resp.json() as Record<string, { usd: number; usd_24h_change: number }>;
+    const now = Math.floor(Date.now() / 1000);
+
+    const inserts = Object.entries(data).map(([coinId, info]) =>
+      env.DB.prepare(
+        `INSERT OR REPLACE INTO market_data
+           (id, symbol, exchange, price, change_24h, updated_at)
+         VALUES (?, ?, 'coingecko', ?, ?, ?)`
+      ).bind(`${coinId}-coingecko`, coinId.toUpperCase(), info.usd, info.usd_24h_change, now)
+    );
+
+    await env.DB.batch(inserts);
+
+    // Also cache in KV for fast reads (5-minute TTL)
+    await env.CACHE.put(
+      'market:latest',
+      JSON.stringify({ data, updatedAt: new Date().toISOString() }),
+      { expirationTtl: 300 }
+    );
+
+    console.log(`[market-update] Updated ${Object.keys(data).length} coins`);
+  } catch (err) {
+    console.error('[market-update] Failed:', err);
   }
-  
-  console.log('Market data updated');
 }
 
-/**
- * Check trading bots (scheduled task)
- */
+// ============================================================================
+// SCHEDULED TASK: Check running bot statuses
+// ============================================================================
 async function checkTradingBots(env: Env): Promise<void> {
-  console.log('Checking trading bots...');
-  
-  const bots = await env.DB.prepare(
-    'SELECT * FROM trading_bots WHERE status = ?'
-  ).bind('running').all();
-  
-  console.log(`Found ${bots.results.length} running bots`);
-  
-  // Process each bot (would execute trading logic here)
-  // For now, just log
+  try {
+    const result = await env.DB.prepare(
+      `SELECT id, user_id, name, strategy, symbol, exchange
+       FROM trading_bots
+       WHERE status = 'active'`
+    ).all();
+
+    const bots = result.results as Array<{
+      id: string;
+      user_id: string;
+      name: string;
+      strategy: string;
+      symbol: string;
+      exchange: string;
+    }>;
+
+    if (bots.length === 0) return;
+
+    console.log(`[bot-check] ${bots.length} running bot(s)`);
+
+    // Update last_checked timestamp for all running bots
+    const updates = bots.map(bot =>
+      env.DB.prepare(
+        `UPDATE trading_bots SET last_checked = strftime('%s','now') WHERE id = ?`
+      ).bind(bot.id)
+    );
+
+    if (updates.length > 0) {
+      await env.DB.batch(updates);
+    }
+  } catch (err) {
+    console.error('[bot-check] Failed:', err);
+  }
 }
 
-/**
- * Helper functions
- */
-function jsonResponse(data: any, headers: Record<string, string> = {}, status: number = 200): Response {
+// ============================================================================
+// HELPER
+// ============================================================================
+function json(data: unknown, headers: Record<string, string> = {}, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    }
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
-}
-
-function addCorsHeaders(response: Response, corsHeaders: Record<string, string>): Response {
-  const newResponse = new Response(response.body, response);
-  Object.entries(corsHeaders).forEach(([key, value]) => {
-    newResponse.headers.set(key, value);
-  });
-  return newResponse;
-}
-
-async function generateJWT(payload: any, secret: string): Promise<string> {
-  // Simple JWT generation (use proper library in production)
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const body = btoa(JSON.stringify({ ...payload, exp: Date.now() + 86400000 }));
-  return `${header}.${body}.signature`;
-}
-
-async function verifyJWT(token: string, secret: string): Promise<any> {
-  // Simple JWT verification (use proper library in production)
-  const [, body] = token.split('.');
-  return JSON.parse(atob(body));
 }
