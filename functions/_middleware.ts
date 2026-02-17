@@ -28,11 +28,17 @@ export async function onRequest(context: any): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // CORS headers
+  // CORS and Security headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    // Security Headers
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
   };
 
   // Handle CORS preflight
@@ -282,6 +288,7 @@ async function handleAnalytics(request: Request, env: Env, userId: string): Prom
 
 /**
  * Market analysis handler (CoinGecko enhanced)
+ * Optimized with cache-first strategy for faster responses
  */
 async function handleMarketAnalysis(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -293,6 +300,21 @@ async function handleMarketAnalysis(request: Request, env: Env): Promise<Respons
   }
 
   try {
+    // Cache-first strategy: Check cache before API call
+    const cacheKey = `market-analysis:${coinId}:${days}`;
+    const cached = await env.CACHE.get(cacheKey);
+
+    if (cached) {
+      const analysis = JSON.parse(cached);
+      return jsonResponse({
+        success: true,
+        analysis,
+        timestamp: Date.now(),
+        cached: true
+      });
+    }
+
+    // Cache miss - fetch from API
     const service = new CoinGeckoService(env.COINGECKO_API_KEY);
     const analysis = await service.analyzeMarket(coinId, days);
 
@@ -300,9 +322,9 @@ async function handleMarketAnalysis(request: Request, env: Env): Promise<Respons
       return jsonResponse({ error: 'Analysis failed - coin not found' }, {}, 404);
     }
 
-    // Cache the result
+    // Cache the result for 5 minutes
     await env.CACHE.put(
-      `market-analysis:${coinId}`,
+      cacheKey,
       JSON.stringify(analysis),
       { expirationTtl: 300 } // 5 minutes
     );
@@ -310,7 +332,8 @@ async function handleMarketAnalysis(request: Request, env: Env): Promise<Respons
     return jsonResponse({
       success: true,
       analysis,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      cached: false
     });
   } catch (error: any) {
     console.error('Market analysis error:', error);
@@ -323,6 +346,7 @@ async function handleMarketAnalysis(request: Request, env: Env): Promise<Respons
 
 /**
  * Trading signals handler - Multi-coin analysis
+ * Optimized with cache-first strategy for faster responses
  */
 async function handleTradingSignals(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -330,6 +354,21 @@ async function handleTradingSignals(request: Request, env: Env): Promise<Respons
   const coinIds = coinsParam.split(',').map(id => id.trim());
 
   try {
+    // Cache-first strategy: Check cache before API call
+    const cacheKey = `trading-signals:${coinsParam}`;
+    const cached = await env.CACHE.get(cacheKey);
+
+    if (cached) {
+      const signalsObject = JSON.parse(cached);
+      return jsonResponse({
+        success: true,
+        signals: signalsObject,
+        timestamp: Date.now(),
+        cached: true
+      });
+    }
+
+    // Cache miss - fetch from API
     const service = new CoinGeckoService(env.COINGECKO_API_KEY);
     const signals = await service.getMultiCoinAnalysis(coinIds);
 
@@ -339,9 +378,9 @@ async function handleTradingSignals(request: Request, env: Env): Promise<Respons
       signalsObject[coinId] = signal;
     });
 
-    // Cache the result
+    // Cache the result for 5 minutes
     await env.CACHE.put(
-      `trading-signals:${coinsParam}`,
+      cacheKey,
       JSON.stringify(signalsObject),
       { expirationTtl: 300 } // 5 minutes
     );
@@ -349,7 +388,8 @@ async function handleTradingSignals(request: Request, env: Env): Promise<Respons
     return jsonResponse({
       success: true,
       signals: signalsObject,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      cached: false
     });
   } catch (error: any) {
     console.error('Trading signals error:', error);
