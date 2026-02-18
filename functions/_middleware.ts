@@ -304,11 +304,14 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
       symbol: 'symbol',
       exchange: 'exchange',
       status: 'status',
+      config: 'config',
       risk_level: 'risk_level',
       riskLevel: 'risk_level',
       max_position_size: 'position_size',
       maxPositionSize: 'position_size',
       position_size: 'position_size',
+      run_interval_minutes: 'run_interval_minutes',
+      runIntervalMinutes: 'run_interval_minutes',
     };
     for (const [inputKey, dbCol] of Object.entries(fieldMap)) {
       if (body[inputKey] !== undefined) {
@@ -728,8 +731,19 @@ async function runMigrations(env: Env): Promise<void> {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       started_at DATETIME,
-      stopped_at DATETIME
+      stopped_at DATETIME,
+      last_run_at DATETIME,
+      last_signal TEXT DEFAULT 'hold',
+      last_error TEXT,
+      run_interval_minutes INTEGER DEFAULT 5,
+      last_checked INTEGER
     )`,
+    // Backfill new columns for existing installs (errors suppressed if already exists)
+    `ALTER TABLE trading_bots ADD COLUMN last_run_at DATETIME`,
+    `ALTER TABLE trading_bots ADD COLUMN last_signal TEXT DEFAULT 'hold'`,
+    `ALTER TABLE trading_bots ADD COLUMN last_error TEXT`,
+    `ALTER TABLE trading_bots ADD COLUMN run_interval_minutes INTEGER DEFAULT 5`,
+    `ALTER TABLE trading_bots ADD COLUMN last_checked INTEGER`,
     `CREATE TABLE IF NOT EXISTS trades (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
