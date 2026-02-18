@@ -180,7 +180,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name || user.full_name,
+        name: user.full_name || user.name,
         role: user.role || 'user'
       }
     });
@@ -206,7 +206,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
     const passwordHash = await hashPassword(password);
 
     await env.DB.prepare(
-      'INSERT INTO users (id, email, password_hash, name, created_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
+      'INSERT INTO users (id, email, password_hash, full_name, created_at) VALUES (?, ?, ?, ?, datetime(\'now\'))'
     ).bind(userId, email, passwordHash, fullName).run();
 
     // Return token immediately so user is logged in after registration
@@ -285,7 +285,7 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
     }
     const newBotId = crypto.randomUUID();
     await env.DB.prepare(
-      `INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange, risk_level, max_position_size, status, created_at, updated_at)
+      `INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange, risk_level, position_size, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'stopped', datetime('now'), datetime('now'))`
     ).bind(newBotId, userId, name, strategy, symbol, exchange, riskLevel || 'medium', maxPositionSize || 0.10).run();
     return jsonResponse({ success: true, botId: newBotId });
@@ -686,14 +686,13 @@ async function runMigrations(env: Env): Promise<void> {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT,
-      name TEXT,
       full_name TEXT,
-      role TEXT DEFAULT 'user',
-      status TEXT DEFAULT 'active',
-      initial_capital REAL DEFAULT 10000,
-      current_capital REAL DEFAULT 10000,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_login DATETIME,
+      email_verified INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      role TEXT DEFAULT 'user'
     )`,
     `CREATE TABLE IF NOT EXISTS trading_bots (
       id TEXT PRIMARY KEY,
@@ -702,25 +701,36 @@ async function runMigrations(env: Env): Promise<void> {
       strategy TEXT NOT NULL,
       symbol TEXT,
       exchange TEXT NOT NULL,
-      status TEXT DEFAULT 'inactive',
+      status TEXT DEFAULT 'stopped',
       risk_level TEXT DEFAULT 'medium',
-      max_position_size REAL DEFAULT 0.10,
+      position_size REAL DEFAULT 0.10,
+      max_daily_loss REAL DEFAULT 0,
+      config TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      started_at DATETIME,
+      stopped_at DATETIME
     )`,
     `CREATE TABLE IF NOT EXISTS trades (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       bot_id TEXT,
+      exchange TEXT,
       symbol TEXT NOT NULL,
       side TEXT NOT NULL,
+      type TEXT DEFAULT 'market',
+      quantity REAL,
       entry_price REAL,
       exit_price REAL,
-      quantity REAL,
+      stop_loss REAL,
+      take_profit REAL,
       pnl REAL,
+      pnl_percentage REAL,
+      fees REAL,
       status TEXT DEFAULT 'open',
-      exchange TEXT,
       strategy TEXT,
+      confidence REAL,
+      reasoning TEXT,
       opened_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       closed_at DATETIME
     )`,

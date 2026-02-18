@@ -298,8 +298,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         await env.DB.prepare(
           `INSERT OR IGNORE INTO trades
            (id, user_id, symbol, side, type, quantity, entry_price, exchange, strategy,
-            status, enhanced_by_ai, ai_confidence, opened_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
+            status, confidence, opened_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
           result.orderResult.orderId,
           'system',
