@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, LogOut, Plus, ChevronDown, Wallet } from 'lucide-react';
+import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, LogOut, Plus, ChevronDown, Wallet, BarChart2 } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { useTradingMode } from '../lib/TradingModeContext';
 import { useNavigate } from 'react-router-dom';
@@ -8,10 +8,12 @@ import api from '../lib/api';
 import web3Service, { WalletInfo } from '../lib/web3';
 import BotConfig from './BotConfig';
 import SettingsModal from './Settings';
+import TradingViewChart from './TradingViewChart';
+import TradingViewWebhook from './TradingViewWebhook';
 import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth() as any;
   const { mode, setMode, isPaperTrading, isLiveTrading } = useTradingMode();
   const navigate = useNavigate();
 
@@ -29,6 +31,9 @@ const DashboardConnected = () => {
   const [showBotConfig, setShowBotConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showTradingView, setShowTradingView] = useState(false);
+  const [tvChartSymbol, setTvChartSymbol] = useState('BINANCE:BTCUSDT');
+  const [showTVWebhook, setShowTVWebhook] = useState(false);
   const [loading, setLoading] = useState(true);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -225,6 +230,18 @@ const DashboardConnected = () => {
             )}
 
             <button
+              onClick={() => setShowTradingView(prev => !prev)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                showTradingView
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-slate-700/50 hover:bg-slate-700/70 text-slate-300'
+              }`}
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              Charts
+            </button>
+
+            <button
               onClick={() => setShowBotConfig(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold transition-all"
             >
@@ -394,6 +411,76 @@ const DashboardConnected = () => {
             )}
           </div>
         </section>
+
+        {/* TradingView Chart Section */}
+        {showTradingView && (
+          <section className="mt-6 space-y-4">
+            {/* Symbol selector + Webhook toggle */}
+            <div className="flex flex-wrap items-center gap-3 px-1">
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-orange-400" />
+                TradingView Charts
+              </h2>
+              <select
+                value={tvChartSymbol}
+                onChange={e => setTvChartSymbol(e.target.value)}
+                className="text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-orange-500"
+              >
+                <optgroup label="Crypto">
+                  <option value="BINANCE:BTCUSDT">BTC/USDT</option>
+                  <option value="BINANCE:ETHUSDT">ETH/USDT</option>
+                  <option value="BINANCE:SOLUSDT">SOL/USDT</option>
+                  <option value="BINANCE:BNBUSDT">BNB/USDT</option>
+                  <option value="BINANCE:XRPUSDT">XRP/USDT</option>
+                </optgroup>
+                <optgroup label="Forex">
+                  <option value="FX:EURUSD">EUR/USD</option>
+                  <option value="FX:GBPUSD">GBP/USD</option>
+                  <option value="FX:USDJPY">USD/JPY</option>
+                  <option value="FX:USDCHF">USD/CHF</option>
+                  <option value="FX:AUDUSD">AUD/USD</option>
+                </optgroup>
+                <optgroup label="Commodities">
+                  <option value="OANDA:XAUUSD">Gold (XAU/USD)</option>
+                  <option value="OANDA:XAGUSD">Silver (XAG/USD)</option>
+                  <option value="OANDA:WTICOUSD">Crude Oil (WTI)</option>
+                </optgroup>
+                <optgroup label="Indices">
+                  <option value="SP:SPX">S&P 500</option>
+                  <option value="DJ:DJI">Dow Jones</option>
+                  <option value="NASDAQ:NDX">NASDAQ 100</option>
+                </optgroup>
+              </select>
+              <button
+                onClick={() => setShowTVWebhook(prev => !prev)}
+                className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all border ${
+                  showTVWebhook
+                    ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                    : 'bg-slate-700/50 border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {showTVWebhook ? 'Hide' : 'Webhook Setup'}
+              </button>
+            </div>
+
+            {/* Chart */}
+            <div className="glass-card rounded-2xl overflow-hidden border border-slate-700/40">
+              <TradingViewChart
+                symbol={tvChartSymbol}
+                interval="60"
+                theme="dark"
+                height={520}
+              />
+            </div>
+
+            {/* Webhook Panel */}
+            {showTVWebhook && (
+              <div className="glass-card rounded-2xl border border-slate-700/40 overflow-hidden">
+                <TradingViewWebhook token={token} />
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* Bot Config Modal */}

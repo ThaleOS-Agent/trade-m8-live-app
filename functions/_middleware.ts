@@ -59,11 +59,12 @@ export async function onRequest(context: any): Promise<Response> {
       }, corsHeaders);
     }
 
-    // Route API requests — pass algo-trading, live-trading, and forex to their dedicated Pages Functions
+    // Route API requests — pass specialized handlers to their dedicated Pages Functions
     if (
       path.startsWith('/api/algo-trading') ||
       path.startsWith('/api/live-trading') ||
-      path.startsWith('/api/forex')
+      path.startsWith('/api/forex') ||
+      path.startsWith('/api/tradingview')
     ) {
       return next();
     }
@@ -296,9 +297,27 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
     const body = await request.json() as any;
     const fields: string[] = [];
     const values: any[] = [];
-    const allowed = ['name', 'strategy', 'symbol', 'exchange', 'risk_level', 'max_position_size', 'status'];
-    for (const key of allowed) {
-      if (body[key] !== undefined) { fields.push(`${key} = ?`); values.push(body[key]); }
+    // Support both camelCase (from frontend) and snake_case; map to actual DB columns
+    const fieldMap: Record<string, string> = {
+      name: 'name',
+      strategy: 'strategy',
+      symbol: 'symbol',
+      exchange: 'exchange',
+      status: 'status',
+      risk_level: 'risk_level',
+      riskLevel: 'risk_level',
+      max_position_size: 'position_size',
+      maxPositionSize: 'position_size',
+      position_size: 'position_size',
+    };
+    for (const [inputKey, dbCol] of Object.entries(fieldMap)) {
+      if (body[inputKey] !== undefined) {
+        // Only add each DB column once
+        if (!fields.includes(`${dbCol} = ?`)) {
+          fields.push(`${dbCol} = ?`);
+          values.push(body[inputKey]);
+        }
+      }
     }
     if (fields.length === 0) return jsonResponse({ error: 'No valid fields to update' }, {}, 400);
     values.push(botId, userId);

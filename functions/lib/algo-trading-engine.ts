@@ -385,7 +385,7 @@ export class AlgoTradingEngine {
    * Compute signal for a given strategy without placing any orders
    */
   async computeSignal(config: AlgoConfig): Promise<SignalResult> {
-    const candles = await this.manager.ccxt.getOHLCV(
+    const candles = await this.manager.getOHLCV(
       config.exchange,
       config.symbol,
       config.timeframe,
@@ -433,7 +433,7 @@ export class AlgoTradingEngine {
     }
 
     // 2. Get current ticker for price reference
-    const ticker = await this.manager.ccxt.getTicker(config.exchange, config.symbol);
+    const ticker = await this.manager.getTicker(config.exchange, config.symbol);
     const entryPrice = signalResult.signal === 'buy' ? ticker.ask : ticker.bid;
     const qty = parseFloat((config.capitalUSDT / entryPrice).toFixed(6));
 
@@ -489,17 +489,15 @@ export class AlgoTradingEngine {
       clientOrderId: `TM8-${Date.now()}`,
     };
 
-    const bracketResult = await this.manager.ccxt.placeBracketOrder(orderParams);
+    const orderResult = await this.manager.placeOrder(orderParams);
     this.status.totalTrades++;
 
     return {
-      success: bracketResult.entry.success,
+      success: orderResult.success,
       signal: signalResult.signal,
       confidence: signalResult.confidence,
       reason: signalResult.reason,
-      orderResult: bracketResult.entry,
-      stopLossOrder: bracketResult.stopLoss,
-      takeProfitOrder: bracketResult.takeProfit,
+      orderResult,
       paperTrade: false,
       timestamp,
       indicators: signalResult.indicatorValues,

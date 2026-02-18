@@ -518,9 +518,14 @@ async function fetchMarketDataForAnalysis(env: Env, symbol: string, timeframe: s
 
   // Crypto — try CoinGecko
   try {
-    const coinId = symUpper.split('/')[0].toLowerCase()
-      .replace('btc', 'bitcoin').replace('eth', 'ethereum')
-      .replace('sol', 'solana').replace('bnb', 'binancecoin');
+    const baseCurrency = symUpper.split('/')[0].toLowerCase();
+    const coinIdMap: Record<string, string> = {
+      btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binancecoin',
+      ada: 'cardano', dot: 'polkadot', avax: 'avalanche-2', matic: 'matic-network',
+      link: 'chainlink', uni: 'uniswap', ltc: 'litecoin', xrp: 'ripple',
+      doge: 'dogecoin', shib: 'shiba-inu', atom: 'cosmos', near: 'near',
+    };
+    const coinId = coinIdMap[baseCurrency] ?? baseCurrency;
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`;
     const resp = await fetch(url, {
       headers: env.COINGECKO_API_KEY ? { 'X-Cg-Pro-Api-Key': env.COINGECKO_API_KEY } : {}
