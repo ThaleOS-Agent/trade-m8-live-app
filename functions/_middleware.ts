@@ -64,7 +64,8 @@ export async function onRequest(context: any): Promise<Response> {
       path.startsWith('/api/algo-trading') ||
       path.startsWith('/api/live-trading') ||
       path.startsWith('/api/forex') ||
-      path.startsWith('/api/tradingview')
+      path.startsWith('/api/tradingview') ||
+      path.startsWith('/api/ai')
     ) {
       return next();
     }
