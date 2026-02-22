@@ -3,8 +3,6 @@
  * Handles email and webhook notifications for TradingView signals, trades, and risk alerts
  */
 
-import { v4 as uuidv4 } from 'uuid';
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -323,7 +321,7 @@ export class NotificationService {
     data: NotificationData,
     emailAddress: string
   ): Promise<void> {
-    const notificationId = uuidv4();
+    const notificationId = crypto.randomUUID();
     const now = new Date().toISOString();
 
     // Build email content
@@ -430,7 +428,7 @@ export class NotificationService {
     type: NotificationType,
     data: NotificationData
   ): Promise<void> {
-    const notificationId = uuidv4();
+    const notificationId = crypto.randomUUID();
     const now = new Date().toISOString();
 
     const payload = {
