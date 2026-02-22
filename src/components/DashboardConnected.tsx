@@ -29,6 +29,7 @@ const DashboardConnected = () => {
   const [recentTrades, setRecentTrades] = useState<Trade[]>([]);
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [showBotConfig, setShowBotConfig] = useState(false);
+  const [selectedBot, setSelectedBot] = useState<TradingBot | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showTradingView, setShowTradingView] = useState(false);
@@ -108,6 +109,16 @@ const DashboardConnected = () => {
     } catch (error) {
       console.error('Failed to toggle bot:', error);
     }
+  };
+
+  const handleBotClick = (bot: TradingBot) => {
+    setSelectedBot(bot);
+    setShowBotConfig(true);
+  };
+
+  const handleNewBot = () => {
+    setSelectedBot(null);
+    setShowBotConfig(true);
   };
 
   const handleLogout = () => {
@@ -242,7 +253,7 @@ const DashboardConnected = () => {
             </button>
 
             <button
-              onClick={() => setShowBotConfig(true)}
+              onClick={handleNewBot}
               className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -318,7 +329,7 @@ const DashboardConnected = () => {
               <div className="glass-inner p-8 text-center">
                 <p className="text-slate-400 mb-4">No trading bots configured yet</p>
                 <button
-                  onClick={() => setShowBotConfig(true)}
+                  onClick={handleNewBot}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold transition-all"
                 >
                   Create Your First Bot
@@ -327,14 +338,21 @@ const DashboardConnected = () => {
             ) : (
               <div className="space-y-3">
                 {activeBots.map(bot => (
-                  <div key={bot.id} className="glass-inner p-4 transition-colors duration-200 hover:bg-slate-700/40">
+                  <div
+                    key={bot.id}
+                    onClick={() => handleBotClick(bot)}
+                    className="glass-inner p-4 transition-colors duration-200 hover:bg-slate-700/40 cursor-pointer group relative"
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h4 className="text-sm font-semibold text-slate-100">{bot.name}</h4>
+                        <h4 className="text-sm font-semibold text-slate-100 group-hover:text-blue-400 transition-colors">{bot.name}</h4>
                         <p className="text-xs text-slate-500 mt-0.5">{bot.strategy} • {bot.symbol}</p>
                       </div>
                       <button
-                        onClick={() => toggleBot(bot.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBot(bot.id);
+                        }}
                         className={`p-2 rounded-lg transition-all duration-200 ${
                           bot.status === 'running'
                             ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
@@ -486,7 +504,11 @@ const DashboardConnected = () => {
       {/* Bot Config Modal */}
       {showBotConfig && (
         <BotConfig
-          onClose={() => setShowBotConfig(false)}
+          bot={selectedBot}
+          onClose={() => {
+            setShowBotConfig(false);
+            setSelectedBot(null);
+          }}
           onBotCreated={loadDashboardData}
         />
       )}

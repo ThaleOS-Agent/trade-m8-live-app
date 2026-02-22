@@ -3,24 +3,28 @@ import { X, Plus, Settings2, TrendingUp, Shield, DollarSign, Sparkles, Zap } fro
 import api from '../lib/api';
 import { STRATEGIES } from '../lib/tradingStrategies';
 import { signalAggregator } from '../lib/signalAggregator';
+import { TradingBot } from '../types';
 
 interface BotConfigProps {
+  bot?: TradingBot | null;
   onClose: () => void;
   onBotCreated?: () => void;
 }
 
-const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
+const BotConfig: React.FC<BotConfigProps> = ({ bot, onClose, onBotCreated }) => {
+  const isEditMode = !!bot;
+
   const [formData, setFormData] = useState({
-    name: '',
-    strategy: 'ai_momentum',
-    symbol: 'AUTO',
-    exchange: 'binance',
-    riskLevel: 'medium',
-    maxPositionSize: 1000,
-    stopLoss: 2,
-    takeProfit: 5,
-    trailingStop: false,
-    autoSelectAsset: true,
+    name: bot?.name || '',
+    strategy: bot?.strategy || 'ai_momentum',
+    symbol: bot?.symbol || 'AUTO',
+    exchange: bot?.exchange || 'binance',
+    riskLevel: (bot as any)?.risk_level || 'medium',
+    maxPositionSize: (bot as any)?.max_position_size || 1000,
+    stopLoss: (bot as any)?.stop_loss || 2,
+    takeProfit: (bot as any)?.take_profit || 5,
+    trailingStop: (bot as any)?.trailing_stop || false,
+    autoSelectAsset: bot?.symbol === 'AUTO',
   });
 
   const [loading, setLoading] = useState(false);
@@ -144,21 +148,32 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
     setLoading(true);
 
     try {
-      await api.createBot({
-        name: formData.name,
-        strategy: formData.strategy,
-        symbol: formData.symbol,
-        exchange: formData.exchange,
-        riskLevel: formData.riskLevel,
-        maxPositionSize: formData.maxPositionSize,
-      });
+      if (isEditMode && bot) {
+        await api.updateBot(bot.id, {
+          name: formData.name,
+          strategy: formData.strategy,
+          symbol: formData.symbol,
+          exchange: formData.exchange,
+          riskLevel: formData.riskLevel,
+          maxPositionSize: formData.maxPositionSize,
+        });
+      } else {
+        await api.createBot({
+          name: formData.name,
+          strategy: formData.strategy,
+          symbol: formData.symbol,
+          exchange: formData.exchange,
+          riskLevel: formData.riskLevel,
+          maxPositionSize: formData.maxPositionSize,
+        });
+      }
 
       if (onBotCreated) {
         onBotCreated();
       }
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create bot');
+      setError(err.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} bot`);
     } finally {
       setLoading(false);
     }
@@ -171,11 +186,17 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
         <div className="sticky top-0 bg-slate-900/95 backdrop-blur-sm p-6 border-b border-slate-700/50 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Plus className="w-5 h-5 text-blue-400" />
+              {isEditMode ? (
+                <Settings2 className="w-5 h-5 text-blue-400" />
+              ) : (
+                <Plus className="w-5 h-5 text-blue-400" />
+              )}
             </div>
             <div>
-              <h2 className="text-xl font-bold">Create Trading Bot</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Configure your automated trading strategy</p>
+              <h2 className="text-xl font-bold">{isEditMode ? 'Edit Trading Bot' : 'Create Trading Bot'}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isEditMode ? 'Update your bot configuration' : 'Configure your automated trading strategy'}
+              </p>
             </div>
           </div>
           <button
@@ -440,7 +461,10 @@ const BotConfig: React.FC<BotConfigProps> = ({ onClose, onBotCreated }) => {
               disabled={loading}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
             >
-              {loading ? 'Creating...' : 'Create Bot'}
+              {loading
+                ? (isEditMode ? 'Updating...' : 'Creating...')
+                : (isEditMode ? 'Update Bot' : 'Create Bot')
+              }
             </button>
           </div>
         </form>
