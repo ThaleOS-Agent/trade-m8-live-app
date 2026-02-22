@@ -2,6 +2,7 @@ import { createAdvancedRiskManager, RiskLevel } from './advanced-risk-manager';
 import { createAIEnhancementEngine } from './ai-enhancement-engine';
 import { createMultiExchangeExecutor, OrderSide, OrderType } from './multi-exchange-executor';
 import { createPortfolioManager } from './portfolio-manager';
+import { sendNotification } from './notification-service';
 
 export class TradingSystem {
   private riskManager;
@@ -9,9 +10,13 @@ export class TradingSystem {
   private executor;
   private portfolio;
   private userId: string;
+  private db?: D1Database;
+  private env?: any;
 
-  constructor(userId: string, initialCapital: number = 10000) {
+  constructor(userId: string, initialCapital: number = 10000, db?: D1Database, env?: any) {
     this.userId = userId;
+    this.db = db;
+    this.env = env;
 
     // Initialize all systems
     this.riskManager = createAdvancedRiskManager({
@@ -29,9 +34,28 @@ export class TradingSystem {
     this.portfolio = createPortfolioManager(initialCapital);
 
     // Register risk alert callback
-    this.riskManager.onAlert((alert) => {
+    this.riskManager.onAlert(async (alert) => {
       console.log(`⚠️  RISK ALERT [${alert.level}]: ${alert.message}`);
-      // TODO: Send notification to user
+
+      // Send notification to user
+      if (this.db && this.env) {
+        try {
+          await sendNotification({
+            userId: this.userId,
+            type: 'risk_alert',
+            data: {
+              riskAlertType: alert.type,
+              riskAlertLevel: alert.level,
+              riskAlertMessage: alert.message,
+              timestamp: new Date().toISOString(),
+            },
+            db: this.db,
+            env: this.env,
+          });
+        } catch (err) {
+          console.warn('Risk alert notification failed:', err);
+        }
+      }
     });
   }
 
@@ -138,6 +162,26 @@ export class TradingSystem {
       stopLoss: result.executedPrice * (side === OrderSide.BUY ? 0.95 : 1.05),
       takeProfit: result.executedPrice * (side === OrderSide.BUY ? 1.10 : 0.90)
     });
+
+    // Send trade executed notification
+    if (this.db && this.env) {
+      sendNotification({
+        userId: this.userId,
+        type: 'trade_executed',
+        data: {
+          tradeId: position.id,
+          tradeSide: side === OrderSide.BUY ? 'buy' : 'sell',
+          tradeSymbol: result.symbol,
+          tradeQuantity: result.executedAmount,
+          tradeEntryPrice: result.executedPrice,
+          tradeExchange: result.exchange,
+          tradeStatus: 'filled',
+          timestamp: new Date().toISOString(),
+        },
+        db: this.db,
+        env: this.env,
+      }).catch(err => console.warn('Trade notification failed:', err));
+    }
 
     // 5. Monitor Risk
     await this.riskManager.monitorPortfolioRisk(

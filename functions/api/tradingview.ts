@@ -27,6 +27,7 @@
 
 import { createExchangeManager } from '../lib/sdk-exchange-connector';
 import { createForexManager } from '../lib/forex-connector';
+import { sendNotification } from '../lib/notification-service';
 
 const FOREX_SYMBOLS = new Set([
   'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'NZD', 'CAD',
@@ -78,6 +79,9 @@ interface Env {
   EXNESS_ACCOUNT_LOGIN: string;
   ALPHA_VANTAGE_API_KEY: string;
   FINNHUB_API_KEY: string;
+  // Notifications
+  RESEND_API_KEY: string;
+  EMAIL_FROM: string;
 }
 
 const cors = {
@@ -456,7 +460,43 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           orderResult.status ?? 'filled',
           0.8,  // TradingView strategy signals are high-confidence
         ).run().catch(console.warn);
+
+        // Send trade executed notification
+        sendNotification({
+          userId: 'tradingview',
+          type: 'trade_executed',
+          data: {
+            signalId,
+            tradeId: orderResult.orderId ?? signalId,
+            tradeSide: orderSide,
+            tradeSymbol: symbol,
+            tradeQuantity: parseFloat(String(quantity)),
+            tradeEntryPrice: orderResult.averagePrice ?? alertPrice ?? 0,
+            tradeExchange: exchange,
+            tradeStatus: orderResult.status ?? 'filled',
+            timestamp: new Date().toISOString(),
+          },
+          db: env.DB,
+          env,
+        }).catch(err => console.warn('Notification failed:', err));
       }
+
+      // Send signal received notification (always, even if trade failed)
+      sendNotification({
+        userId: 'tradingview',
+        type: 'signal_received',
+        data: {
+          signalId,
+          signalAction: action,
+          signalSymbol: symbol,
+          signalExchange: exchange,
+          signalStrategy: strategy,
+          signalPrice: alertPrice,
+          timestamp: timestamp,
+        },
+        db: env.DB,
+        env,
+      }).catch(err => console.warn('Notification failed:', err));
 
       return json({
         success: true,
