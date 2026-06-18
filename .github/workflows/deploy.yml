@@ -34,14 +34,15 @@ jobs:
       - name: Check Cloudflare credentials
         id: check-credentials
         run: |
-          if [[ -n "$CLOUDFLARE_API_TOKEN" ]]; then
+          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
             echo "available=true" >> $GITHUB_OUTPUT
           else
             echo "available=false" >> $GITHUB_OUTPUT
-            echo "::warning::CLOUDFLARE_API_TOKEN secret is not configured. Skipping Cloudflare Pages deployment."
+            echo "::warning::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID secret is not configured. Skipping Cloudflare Pages deployment."
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Publish to Cloudflare Pages
         if: steps.check-credentials.outputs.available == 'true'
