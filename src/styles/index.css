@@ -1,9 +1,6 @@
-@import "tailwindcss";
-
-@theme {
-  --color-slate-950: #020617;
-  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
   margin: 0;
