@@ -34,7 +34,9 @@ jobs:
       - name: Check Cloudflare credentials
         id: check-credentials
         run: |
-          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+          TOKEN_TRIMMED="${CLOUDFLARE_API_TOKEN//[[:space:]]/}"
+          ACCOUNT_ID_TRIMMED="${CLOUDFLARE_ACCOUNT_ID//[[:space:]]/}"
+          if [[ -n "$TOKEN_TRIMMED" && -n "$ACCOUNT_ID_TRIMMED" ]]; then
             echo "available=true" >> $GITHUB_OUTPUT
           else
             echo "available=false" >> $GITHUB_OUTPUT
@@ -45,7 +47,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Publish to Cloudflare Pages
-        if: steps.check-credentials.outputs.available == 'true' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != ''
+        if: steps.check-credentials.outputs.available == 'true'
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -56,7 +58,7 @@ jobs:
           wranglerVersion: '3'
 
       - name: Health Check
-        if: steps.check-credentials.outputs.available == 'true' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' && github.ref == 'refs/heads/main'
+        if: steps.check-credentials.outputs.available == 'true' && github.ref == 'refs/heads/main'
         run: |
           echo "Waiting for deployment to propagate..."
           sleep 30
