@@ -50,8 +50,8 @@ jobs:
         if: steps.check-credentials.outputs.available == 'true'
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           projectName: trade-m8-production
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
