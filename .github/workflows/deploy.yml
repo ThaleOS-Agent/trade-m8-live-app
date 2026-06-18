@@ -34,8 +34,14 @@ jobs:
       - name: Check Cloudflare credentials
         id: check-credentials
         run: |
-          if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+          TOKEN_TRIMMED="${CLOUDFLARE_API_TOKEN//[[:space:]]/}"
+          ACCOUNT_ID_TRIMMED="${CLOUDFLARE_ACCOUNT_ID//[[:space:]]/}"
+          if [[ -n "$TOKEN_TRIMMED" && -n "$ACCOUNT_ID_TRIMMED" ]]; then
             echo "available=true" >> $GITHUB_OUTPUT
+            echo "::add-mask::$TOKEN_TRIMMED"
+            echo "::add-mask::$ACCOUNT_ID_TRIMMED"
+            echo "CLOUDFLARE_API_TOKEN=$TOKEN_TRIMMED" >> $GITHUB_ENV
+            echo "CLOUDFLARE_ACCOUNT_ID=$ACCOUNT_ID_TRIMMED" >> $GITHUB_ENV
           else
             echo "available=false" >> $GITHUB_OUTPUT
             echo "::warning::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID secret is not configured. Skipping Cloudflare Pages deployment."
@@ -45,18 +51,18 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Publish to Cloudflare Pages
-        if: steps.check-credentials.outputs.available == 'true' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != ''
+        if: steps.check-credentials.outputs.available == 'true'
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           projectName: trade-m8-production
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
 
       - name: Health Check
-        if: steps.check-credentials.outputs.available == 'true' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' && github.ref == 'refs/heads/main'
+        if: steps.check-credentials.outputs.available == 'true' && github.ref == 'refs/heads/main'
         run: |
           echo "Waiting for deployment to propagate..."
           sleep 30
