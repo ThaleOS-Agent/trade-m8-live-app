@@ -1,4 +1,4 @@
 Strategy,AI Enabled,Win Rate,Return %,Sharpe,Max Drawdown,Total Trades,Final Capital
-technical_master,false,58.94,2.84,1.823,2.52,207,10283.88
-technical_master,true,76.19,2.59,10.290,0.41,21,10258.90
-ensemble,true,61.97,2.60,3.327,1.38,71,10259.63
+technical_master,false,57.02,2.58,2.496,1.15,121,10257.53
+technical_master,true,58.33,2.71,3.295,1.38,96,10270.66
+ensemble,true,58.54,2.73,3.167,1.29,82,10273.35
