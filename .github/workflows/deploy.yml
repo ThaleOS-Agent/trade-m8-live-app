@@ -37,9 +37,9 @@ jobs:
           TOKEN_TRIMMED="${CLOUDFLARE_API_TOKEN//[[:space:]]/}"
           ACCOUNT_ID_TRIMMED="${CLOUDFLARE_ACCOUNT_ID//[[:space:]]/}"
           if [[ -n "$TOKEN_TRIMMED" && -n "$ACCOUNT_ID_TRIMMED" ]]; then
-            echo "available=true" >> $GITHUB_OUTPUT
+            echo "available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "available=false" >> $GITHUB_OUTPUT
+            echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID secret is not configured. Skipping Cloudflare Pages deployment."
           fi
         env:
