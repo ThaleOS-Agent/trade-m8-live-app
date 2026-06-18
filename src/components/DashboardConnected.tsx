@@ -38,22 +38,6 @@ const DashboardConnected = () => {
   const [loading, setLoading] = useState(true);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-    const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
-        setShowSettingsMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const loadDashboardData = async () => {
     try {
       const [portfolioData, botsData, tradesData] = await Promise.all([
@@ -80,6 +64,22 @@ const DashboardConnected = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboardData();
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
+        setShowSettingsMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleWalletConnect = async () => {
     try {

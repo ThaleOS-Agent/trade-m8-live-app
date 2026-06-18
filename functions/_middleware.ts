@@ -379,8 +379,8 @@ async function handlePortfolio(request: Request, env: Env, userId: string): Prom
 
   return jsonResponse({
     portfolio,
-    activeTrades: activeTrades.count,
-    unrealizedPnL: activeTrades.total_pnl || 0
+    activeTrades: (activeTrades as any)?.count ?? 0,
+    unrealizedPnL: (activeTrades as any)?.total_pnl ?? 0
   });
 }
 
@@ -389,11 +389,15 @@ async function handlePortfolio(request: Request, env: Env, userId: string): Prom
  */
 async function handleMarketData(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const symbols = url.searchParams.get('symbols')?.split(',') || [];
-  
+  const symbols = (url.searchParams.get('symbols') || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  if (symbols.length === 0) {
+    return jsonResponse({ marketData: [] });
+  }
+
   // Get cached market data
   const marketData = await env.DB.prepare(
-    `SELECT * FROM market_data WHERE symbol IN (${symbols.map(() => '?').join(',')}) 
+    `SELECT * FROM market_data WHERE symbol IN (${symbols.map(() => '?').join(',')})
      AND updated_at > strftime('%s', 'now', '-5 minutes')`
   ).bind(...symbols).all();
 
@@ -587,6 +591,9 @@ async function authenticate(request: Request, env: Env): Promise<{ valid: boolea
 
   try {
     const payload = await verifyJWT(token, env.JWT_SECRET);
+    // Confirm session still exists in KV (catches post-logout token reuse)
+    const stored = await env.SESSIONS.get(`session:${payload.userId}`);
+    if (!stored) return { valid: false };
     return { valid: true, userId: payload.userId };
   } catch {
     return { valid: false };
@@ -816,8 +823,7 @@ async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   if (!stored) return false;
-  // Legacy plain-text or placeholder (first-time migration)
-  if (!stored.startsWith('pbkdf2:')) return true; // allow access, hash updated on next login
+  if (!stored.startsWith('pbkdf2:')) return false; // reject unknown/legacy hash formats
   const [, saltHex, hashHex] = stored.split(':');
   const enc = new TextEncoder();
   const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
@@ -866,6 +872,6 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
   const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
   if (!valid) throw new Error('Invalid token signature');
   const payload = JSON.parse(b64urlDecode(body));
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
+  if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
   return payload;
 }

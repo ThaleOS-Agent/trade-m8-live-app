@@ -292,8 +292,11 @@ async function updateMarketData(env: Env): Promise<void> {
 // ============================================================================
 async function runScheduledBots(env: Env): Promise<void> {
   try {
-    // Ensure new bot columns exist (idempotent ALTER TABLE, errors suppressed)
-    await ensureBotColumns(env);
+    // Ensure new bot columns exist — guarded by KV flag so DDL only runs once
+    if (!await env.CACHE.get('worker:columns-migrated')) {
+      await ensureBotColumns(env);
+      await env.CACHE.put('worker:columns-migrated', '1', { expirationTtl: 86400 * 30 });
+    }
 
     // Fetch all bots with status = 'running'
     const result = await env.DB.prepare(

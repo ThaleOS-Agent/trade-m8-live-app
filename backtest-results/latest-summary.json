@@ -2,28 +2,28 @@
   {
     "strategy": "technical_master",
     "ai": false,
-    "winRate": 73.52941176470588,
-    "return": 2.4431780739800706,
-    "sharpe": 8.55778792081343,
-    "maxDrawdown": 0.0023442488645166854,
-    "trades": 34
+    "winRate": 58.93719806763285,
+    "return": 2.8388204859833057,
+    "sharpe": 1.8231523905182414,
+    "maxDrawdown": 0.025218063898746677,
+    "trades": 207
   },
   {
     "strategy": "technical_master",
     "ai": true,
-    "winRate": 74.35897435897436,
-    "return": 4.359414012566285,
-    "sharpe": 12.752451608160866,
-    "maxDrawdown": 0.0028782127465872874,
-    "trades": 39
+    "winRate": 76.19047619047619,
+    "return": 2.5890320662770683,
+    "sharpe": 10.290315748352603,
+    "maxDrawdown": 0.004111492952153111,
+    "trades": 21
   },
   {
     "strategy": "ensemble",
     "ai": true,
-    "winRate": 58.77192982456141,
-    "return": 2.5208418322749457,
-    "sharpe": 2.493150996373321,
-    "maxDrawdown": 0.022113586202430768,
-    "trades": 114
+    "winRate": 61.97183098591549,
+    "return": 2.5962535677567393,
+    "sharpe": 3.327364741843144,
+    "maxDrawdown": 0.013839115901883907,
+    "trades": 71
   }
 ]
