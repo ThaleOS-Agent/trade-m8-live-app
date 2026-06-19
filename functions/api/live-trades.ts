@@ -39,23 +39,26 @@ function err(message: string, status = 400) {
  */
 async function authenticateUser(request: Request, env: Env): Promise<string | null> {
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
   const token = authHeader.substring(7);
-
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-
-    const payload = JSON.parse(atob(parts[1]));
-
-    // Check expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) {
-      return null;
-    }
-
+    const [header, body, sig] = parts;
+    const signingInput = `${header}.${body}`;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(env.JWT_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+    );
+    const sigBytes = Uint8Array.from(
+      atob(sig.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)
+    );
+    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
+    if (!valid) return null;
+    const payload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
+    // Reject tokens with no expiry (Fix: was `if (payload.exp &&...`)
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload.userId || payload.sub || null;
   } catch {
     return null;
@@ -218,7 +221,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
           SUM(pnl) as total_pnl
          FROM positions
          WHERE user_id = ?`
-      ).bind(userId).first();
+      ).bind(userId).first() as any;
 
       // Get today's trades
       const todayTrades = await env.DB.prepare(
@@ -231,7 +234,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
          WHERE user_id = ?
          AND status = 'closed'
          AND opened_at > datetime('now', 'start of day')`
-      ).bind(userId).first();
+      ).bind(userId).first() as any;
 
       // Get pending signals
       const pendingSignals = await env.DB.prepare(
@@ -263,7 +266,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
          WHERE user_id = ?
          AND status = 'closed'
          AND opened_at > datetime('now', '-7 days')`
-      ).bind(userId).first();
+      ).bind(userId).first() as any;
 
       return json({
         positions: {

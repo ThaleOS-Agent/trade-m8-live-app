@@ -3,7 +3,7 @@
  * Handles all API requests and trading logic
  */
 
-import { CoinGeckoService, symbolToCoinId } from './lib/coingecko-service';
+import { CoinGeckoService } from './lib/coingecko-service';
 
 // Environment interface
 interface Env {
@@ -94,7 +94,6 @@ export async function onRequest(context: any): Promise<Response> {
  * Handle API requests
  */
 async function handleApiRequest(request: Request, env: Env, path: string): Promise<Response> {
-  const method = request.method;
   const segments = path.split('/').filter(Boolean);
   const endpoint = segments[1]; // After '/api/'
 
@@ -115,19 +114,19 @@ async function handleApiRequest(request: Request, env: Env, path: string): Promi
       return handleAuth(request, env);
     
     case 'bots':
-      return handleBots(request, env, auth.userId);
-    
+      return handleBots(request, env, auth.userId!);
+
     case 'trades':
-      return handleTrades(request, env, auth.userId);
-    
+      return handleTrades(request, env, auth.userId!);
+
     case 'portfolio':
-      return handlePortfolio(request, env, auth.userId);
-    
+      return handlePortfolio(request, env, auth.userId!);
+
     case 'market':
       return handleMarketData(request, env);
-    
+
     case 'analytics':
-      return handleAnalytics(request, env, auth.userId);
+      return handleAnalytics(request, env, auth.userId!);
 
     case 'market-analysis':
       return handleMarketAnalysis(request, env);
@@ -151,7 +150,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
   const action = url.pathname.split('/').pop();
 
   if (action === 'login' && request.method === 'POST') {
-    const { email, password } = await request.json();
+    const { email, password } = await request.json() as any;
 
     if (!email || !password) {
       return jsonResponse({ error: 'Email and password required' }, {}, 400);
@@ -192,7 +191,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
   }
 
   if (action === 'register' && request.method === 'POST') {
-    const { email, password, fullName } = await request.json();
+    const { email, password, fullName } = await request.json() as any;
 
     if (!email || !password || !fullName) {
       return jsonResponse({ error: 'Email, password and name required' }, {}, 400);
@@ -366,7 +365,7 @@ async function handleTrades(request: Request, env: Env, userId: string): Promise
 /**
  * Portfolio handler
  */
-async function handlePortfolio(request: Request, env: Env, userId: string): Promise<Response> {
+async function handlePortfolio(_request: Request, env: Env, userId: string): Promise<Response> {
   // Get latest portfolio snapshot
   const portfolio = await env.DB.prepare(
     'SELECT * FROM portfolio_snapshots WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
@@ -407,7 +406,7 @@ async function handleMarketData(request: Request, env: Env): Promise<Response> {
 /**
  * Analytics handler
  */
-async function handleAnalytics(request: Request, env: Env, userId: string): Promise<Response> {
+async function handleAnalytics(_request: Request, env: Env, userId: string): Promise<Response> {
   // Get performance metrics
   const metrics = await env.DB.prepare(
     'SELECT * FROM performance_metrics WHERE user_id = ? ORDER BY created_at DESC LIMIT 100'
@@ -541,7 +540,7 @@ async function handleTradingSignals(request: Request, env: Env): Promise<Respons
 /**
  * Trading opportunities handler - Find best opportunities
  */
-async function handleTradingOpportunities(request: Request, env: Env): Promise<Response> {
+async function handleTradingOpportunities(_request: Request, env: Env): Promise<Response> {
   try {
     // Check cache first
     const cached = await env.CACHE.get('trading-opportunities');
@@ -598,54 +597,6 @@ async function authenticate(request: Request, env: Env): Promise<{ valid: boolea
   } catch {
     return { valid: false };
   }
-}
-
-/**
- * Update market data (scheduled task)
- */
-async function updateMarketData(env: Env): Promise<void> {
-  console.log('Updating market data...');
-  
-  // Fetch from CoinGecko
-  const symbols = ['bitcoin', 'ethereum', 'cardano'];
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${symbols.join(',')}&vs_currencies=usd&include_24hr_change=true`;
-  
-  const response = await fetch(url, {
-    headers: { 'X-Cg-Pro-Api-Key': env.COINGECKO_API_KEY }
-  });
-  
-  const data = await response.json();
-  
-  // Update database
-  for (const [symbol, info] of Object.entries(data)) {
-    await env.DB.prepare(
-      'INSERT OR REPLACE INTO market_data (id, symbol, exchange, price, change_24h, updated_at) VALUES (?, ?, ?, ?, ?, strftime(\'%s\', \'now\'))'
-    ).bind(
-      `${symbol}-coingecko`,
-      symbol.toUpperCase(),
-      'coingecko',
-      info.usd,
-      info.usd_24h_change
-    ).run();
-  }
-  
-  console.log('Market data updated');
-}
-
-/**
- * Check trading bots (scheduled task)
- */
-async function checkTradingBots(env: Env): Promise<void> {
-  console.log('Checking trading bots...');
-  
-  const bots = await env.DB.prepare(
-    'SELECT * FROM trading_bots WHERE status = ?'
-  ).bind('running').all();
-  
-  console.log(`Found ${bots.results.length} running bots`);
-  
-  // Process each bot (would execute trading logic here)
-  // For now, just log
 }
 
 /**

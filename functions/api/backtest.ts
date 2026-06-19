@@ -71,7 +71,7 @@ async function authenticate(request: Request, env: Env): Promise<string | null> 
     const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
     if (!valid) return null;
     const payload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload.userId as string;
   } catch {
     return null;
@@ -169,7 +169,7 @@ async function ensureBacktestTable(db: D1Database): Promise<void> {
 async function handleRequest(
   request: Request,
   env: Env,
-  ctx: ExecutionContext
+  _ctx: ExecutionContext
 ): Promise<Response> {
   const url = new URL(request.url);
   const { method } = request;

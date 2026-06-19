@@ -19,6 +19,7 @@ const FOREX_EXCHANGES = new Set(['oanda', 'exness']);
 
 interface Env {
   DB: D1Database;
+  CACHE: KVNamespace;
   JWT_SECRET: string;
   // Binance
   BINANCE_API_KEY: string;
@@ -230,7 +231,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
 
       const manager = getManager(env);
-      const engine = createAlgoEngine(manager, config);
+      const engine = createAlgoEngine(manager, config, env.CACHE);
       const signal = await engine.computeSignal(config);
 
       return json({ success: true, config, signal });
@@ -290,7 +291,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       }
 
       const manager = getManager(env);
-      const engine = createAlgoEngine(manager, config);
+      const engine = createAlgoEngine(manager, config, env.CACHE);
       const result = await engine.runCycle(config);
 
       // Log trade to D1 if executed

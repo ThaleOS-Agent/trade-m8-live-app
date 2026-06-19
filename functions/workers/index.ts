@@ -399,9 +399,30 @@ async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchang
       params: storedConfig.params,
     };
 
+    const VALID_STRATEGIES = new Set(['momentum','rsi_reversion','macd_crossover','breakout','scalping','dual_ma','buy_the_dip','trend_following']);
+    if (!VALID_STRATEGIES.has(bot.strategy)) {
+      const msg = `Unknown strategy '${bot.strategy}' — update the bot config`;
+      console.error(`${tag} ${msg}`);
+      await env.DB.prepare(`UPDATE trading_bots SET last_error = ?, updated_at = datetime('now') WHERE id = ?`)
+        .bind(msg, bot.id).run().catch(() => {});
+      return;
+    }
+
     console.log(`${tag} Running ${algoConfig.strategy} on ${algoConfig.symbol} [${algoConfig.timeframe}] paper=${algoConfig.paperMode}`);
 
-    const engine = createAlgoEngine(manager, algoConfig);
+    // Fix #3: skip if an open or paper trade already exists for this bot+symbol
+    // 'paper' is the status for paperMode trades; 'open' for live trades — check both
+    const existingTrade = await env.DB.prepare(
+      `SELECT id FROM trades WHERE bot_id = ? AND symbol = ? AND status IN ('open','paper') LIMIT 1`
+    ).bind(bot.id, bot.symbol).first();
+
+    if (existingTrade) {
+      console.log(`${tag} Skipping — open trade already exists for ${bot.symbol}`);
+      return;
+    }
+
+    // Fix #10: pass KV cache so OHLCV data is cached between cron ticks
+    const engine = createAlgoEngine(manager, algoConfig, env.CACHE);
     const result: AlgoTradeResult = await engine.runCycle(algoConfig);
 
     // Always update last_run_at and last_signal
@@ -411,7 +432,9 @@ async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchang
        WHERE id = ?`
     ).bind(result.signal, bot.id).run();
 
-    if (result.signal === 'hold' || result.confidence < 0.55) {
+    // Fix #2: threshold is now enforced inside the engine at 0.72;
+    // hold and low-confidence results both return signal='hold'
+    if (result.signal === 'hold') {
       console.log(`${tag} HOLD — ${result.reason} (conf=${result.confidence.toFixed(2)})`);
       return;
     }
@@ -421,19 +444,11 @@ async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchang
     const entryPrice = result.orderResult?.price ?? 0;
     const quantity = result.orderResult?.amount ?? (algoConfig.capitalUSDT / Math.max(entryPrice, 1));
 
-    const stopLossPrice = entryPrice > 0
-      ? (result.signal === 'buy'
-        ? entryPrice * (1 - algoConfig.stopLossPct)
-        : entryPrice * (1 + algoConfig.stopLossPct))
-      : null;
+    // SL/TP now computed by the engine (ATR-based, fee-adjusted)
+    const stopLossPrice = result.stopLossPrice ?? null;
+    const takeProfitPrice = result.takeProfitPrice ?? null;
 
-    const takeProfitPrice = entryPrice > 0
-      ? (result.signal === 'buy'
-        ? entryPrice * (1 + algoConfig.takeProfitPct)
-        : entryPrice * (1 - algoConfig.takeProfitPct))
-      : null;
-
-    const tradeType = algoConfig.paperMode ? 'paper' : 'market';
+    const tradeType = result.orderResult?.type ?? (algoConfig.paperMode ? 'paper' : 'market');
     const tradeStatus = algoConfig.paperMode ? 'paper' : 'open';
 
     await env.DB.prepare(

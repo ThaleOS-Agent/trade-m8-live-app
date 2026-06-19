@@ -53,7 +53,7 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
   const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
   if (!valid) throw new Error('Invalid JWT signature');
   const data = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-  if (data.exp && data.exp < Math.floor(Date.now() / 1000)) throw new Error('JWT expired');
+  if (!data.exp || data.exp < Math.floor(Date.now() / 1000)) throw new Error('JWT expired');
   return data;
 }
 

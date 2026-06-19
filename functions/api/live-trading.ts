@@ -21,7 +21,7 @@ function getTradingSystem(userId: string, initialCapital?: number): TradingSyste
 // Add new endpoint handler
 async function handleAIEnhancedTrading(
   request: Request,
-  env: Env,
+  _env: Env,
   userId: string,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
@@ -39,7 +39,7 @@ async function handleAIEnhancedTrading(
       marketData
     });
 
-    return jsonResponse({ success: true, ...result }, corsHeaders);
+    return jsonResponse({ ...result, success: true }, corsHeaders);
   } catch (error: any) {
     return jsonResponse({
       success: false,
@@ -309,7 +309,7 @@ async function handleMarketData(
 async function handleStrategySignal(
   request: Request,
   env: Env,
-  userId: string,
+  _userId: string,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
   try {
@@ -455,7 +455,7 @@ function buildForexManagerFromEnv(env: Env) {
   });
 }
 
-async function checkRiskLimits(env: Env, userId: string, amount: number) {
+async function checkRiskLimits(_env: Env, _userId: string, amount: number) {
   const MAX_POSITION_SIZE = 10000; // $10k max per trade
   if (amount > MAX_POSITION_SIZE) {
     return {
