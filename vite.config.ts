@@ -20,16 +20,10 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router-dom/')) {
-            return 'react-vendor';
-          }
-          if (id.includes('/recharts/')) {
-            return 'charts';
-          }
-          if (id.includes('/web3/') || id.includes('/ethers/')) {
-            return 'web3';
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'charts': ['recharts'],
+          'web3': ['web3', 'ethers'],
         },
       },
     },
