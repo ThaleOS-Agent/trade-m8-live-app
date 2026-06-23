@@ -366,15 +366,32 @@ async function handleTrades(request: Request, env: Env, userId: string): Promise
  * Portfolio handler
  */
 async function handlePortfolio(_request: Request, env: Env, userId: string): Promise<Response> {
-  // Get latest portfolio snapshot
-  const portfolio = await env.DB.prepare(
-    'SELECT * FROM portfolio_snapshots WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
-  ).bind(userId).first();
+  // Alias columns to match frontend expectations (daily_pnl → daily_change, etc.)
+  const portfolio = await env.DB.prepare(`
+    SELECT
+      total_value,
+      cash_balance,
+      positions_value,
+      daily_pnl        AS daily_change,
+      daily_pnl_percent AS daily_change_percent,
+      total_pnl        AS realized_pnl,
+      total_pnl_percent,
+      max_drawdown,
+      sharpe_ratio,
+      win_rate,
+      snapshot_type,
+      created_at
+    FROM portfolio_snapshots
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).bind(userId).first();
 
-  // Get active trades
+  // Active open + paper trades
   const activeTrades = await env.DB.prepare(
-    'SELECT COUNT(*) as count, SUM(pnl) as total_pnl FROM trades WHERE user_id = ? AND status = ?'
-  ).bind(userId, 'open').first();
+    `SELECT COUNT(*) as count, SUM(pnl) as total_pnl
+     FROM trades WHERE user_id = ? AND status IN ('open','paper')`
+  ).bind(userId).first();
 
   return jsonResponse({
     portfolio,
