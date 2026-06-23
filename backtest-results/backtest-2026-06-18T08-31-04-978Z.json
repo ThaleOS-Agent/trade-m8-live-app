@@ -1,0 +1,1723 @@
+[
+  {
+    "config": {
+      "label": "BTC technical_master (no AI)",
+      "symbol": "BTC/USD",
+      "startDate": "2024-06-01",
+      "endDate": "2025-06-01",
+      "initialCapital": 10000,
+      "strategy": "technical_master",
+      "enableAI": false,
+      "enableRiskManagement": true
+    },
+    "summary": {
+      "totalTrades": 1,
+      "winningTrades": 1,
+      "losingTrades": 0,
+      "winRate": 100,
+      "totalReturn": 2.9697780035257892,
+      "totalReturnPercent": 0.029697780035257894,
+      "sharpeRatio": 0,
+      "sortinoRatio": 0,
+      "maxDrawdown": 0,
+      "profitFactor": 0,
+      "avgWin": 3.9697780035256507,
+      "avgLoss": 0,
+      "largestWin": 3.9697780035256507,
+      "largestLoss": 0,
+      "avgHoldingPeriod": 0.000016666666666666667,
+      "finalCapital": 10002.969778003526,
+      "totalFees": 2.004974752756282
+    },
+    "trades": [
+      {
+        "timestamp": "2026-02-12T00:00:00.000Z",
+        "symbol": "BTC/USD",
+        "action": "buy",
+        "price": 66938,
+        "quantity": 0.01493919746631211,
+        "value": 1000,
+        "fees": 1,
+        "reason": "SMA crossover bearish + RSI oversold",
+        "aiConfidence": 0.7
+      },
+      {
+        "timestamp": "2026-03-08T00:00:00.000Z",
+        "symbol": "BTC/USD",
+        "action": "sell",
+        "price": 67271,
+        "quantity": 0.01493919746631211,
+        "value": 1004.974752756282,
+        "fees": 1.004974752756282,
+        "reason": "SMA crossover bearish + MACD bearish",
+        "aiConfidence": 0.7999999999999999
+      }
+    ],
+    "equityCurve": [
+      {
+        "timestamp": "2026-01-03T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-07T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-11T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-15T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-19T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-23T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-27T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-31T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-04T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-08T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-12T00:00:00.000Z",
+        "equity": 9999,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-16T00:00:00.000Z",
+        "equity": 10025.576832292569,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-20T00:00:00.000Z",
+        "equity": 9998.71615524814,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-24T00:00:00.000Z",
+        "equity": 9963.743493979504,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-28T00:00:00.000Z",
+        "equity": 9983.254085870507,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-04T00:00:00.000Z",
+        "equity": 10019.675849293377,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-08T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-12T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-16T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-20T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-24T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-28T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-01T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-05T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-09T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-13T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-17T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-21T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-25T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-29T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-03T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-07T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-11T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-15T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-19T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-23T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-27T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-31T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-04T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-08T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-12T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-16T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      }
+    ],
+    "monthlyReturns": [
+      {
+        "month": "2026-01",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-02",
+        "return": -0.1674591412949303,
+        "trades": 0
+      },
+      {
+        "month": "2026-03",
+        "return": -0.16673265224472503,
+        "trades": 0
+      },
+      {
+        "month": "2026-04",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-05",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-06",
+        "return": 0,
+        "trades": 0
+      }
+    ],
+    "performance": {
+      "daily": [],
+      "weekly": [],
+      "monthly": []
+    },
+    "roi": {
+      "daily": [
+        {
+          "date": "2026-01-07",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-11",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-15",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-19",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-23",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-27",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-31",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-04",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-08",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-12",
+          "roi": -0.01,
+          "equity": 9999
+        },
+        {
+          "date": "2026-02-16",
+          "roi": 0.26579490241592885,
+          "equity": 10025.576832292569
+        },
+        {
+          "date": "2026-02-20",
+          "roi": -0.26792151208607423,
+          "equity": 9998.71615524814
+        },
+        {
+          "date": "2026-02-24",
+          "roi": -0.3497715179191173,
+          "equity": 9963.743493979504
+        },
+        {
+          "date": "2026-02-28",
+          "roi": 0.1958158788691434,
+          "equity": 9983.254085870507
+        },
+        {
+          "date": "2026-03-04",
+          "roi": 0.36482857302428345,
+          "equity": 10019.675849293377
+        },
+        {
+          "date": "2026-03-08",
+          "roi": -0.16673265224472503,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-12",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-16",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-20",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-24",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-28",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-01",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-05",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-09",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-13",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-17",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-21",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-25",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-29",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-03",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-07",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-11",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-15",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-19",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-23",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-27",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-31",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-04",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-08",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-12",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-16",
+          "roi": 0,
+          "equity": 10002.969778003526
+        }
+      ],
+      "avgDaily": 0.0007808212697424174,
+      "medianDaily": 0,
+      "stdDev": 0.10639176430818555,
+      "profitableDays": 3,
+      "totalDays": 41,
+      "profitablePct": 7.317073170731707,
+      "bestDay": {
+        "date": "2026-03-04",
+        "roi": 0.36482857302428345,
+        "equity": 10019.675849293377
+      },
+      "worstDay": {
+        "date": "2026-02-24",
+        "roi": -0.3497715179191173,
+        "equity": 9963.743493979504
+      },
+      "longestWinStreak": 2,
+      "longestLossStreak": 2,
+      "annualisedReturn": 0.26469312109969056,
+      "monthly": [
+        {
+          "month": "2026-01",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-02",
+          "roi": -0.1674591412949303,
+          "days": 7
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.16673265224472503,
+          "days": 7
+        },
+        {
+          "month": "2026-04",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-05",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-06",
+          "roi": 0,
+          "days": 4
+        }
+      ]
+    }
+  },
+  {
+    "config": {
+      "label": "BTC technical_master + AI",
+      "symbol": "BTC/USD",
+      "startDate": "2024-06-01",
+      "endDate": "2025-06-01",
+      "initialCapital": 10000,
+      "strategy": "technical_master",
+      "enableAI": true,
+      "enableRiskManagement": true,
+      "aiConfig": {
+        "aiWeight": 0.4,
+        "minConfidence": 0.85
+      }
+    },
+    "summary": {
+      "totalTrades": 1,
+      "winningTrades": 1,
+      "losingTrades": 0,
+      "winRate": 100,
+      "totalReturn": 2.9697780035257892,
+      "totalReturnPercent": 0.029697780035257894,
+      "sharpeRatio": 0,
+      "sortinoRatio": 0,
+      "maxDrawdown": 0,
+      "profitFactor": 0,
+      "avgWin": 3.9697780035256507,
+      "avgLoss": 0,
+      "largestWin": 3.9697780035256507,
+      "largestLoss": 0,
+      "avgHoldingPeriod": 0,
+      "finalCapital": 10002.969778003526,
+      "totalFees": 2.004974752756282
+    },
+    "trades": [
+      {
+        "timestamp": "2026-02-12T00:00:00.000Z",
+        "symbol": "BTC/USD",
+        "action": "buy",
+        "price": 66938,
+        "quantity": 0.01493919746631211,
+        "value": 1000,
+        "fees": 1,
+        "reason": "Base buy signal with 70.0% confidence, AI analysis: bullish (86.3% confidence), Fusion score: 42.0%, Sentiment: Positive (40.8%), Enhanced confidence: 95.0%, AI significantly improved confidence (+25.0%)",
+        "aiConfidence": 0.95
+      },
+      {
+        "timestamp": "2026-03-08T00:00:00.000Z",
+        "symbol": "BTC/USD",
+        "action": "sell",
+        "price": 67271,
+        "quantity": 0.01493919746631211,
+        "value": 1004.974752756282,
+        "fees": 1.004974752756282,
+        "reason": "Base sell signal with 80.0% confidence, AI analysis: bullish (86.3% confidence), Fusion score: 42.0%, Sentiment: Positive (40.8%), Enhanced confidence: 95.0%, AI significantly improved confidence (+15.0%)",
+        "aiConfidence": 0.95
+      }
+    ],
+    "equityCurve": [
+      {
+        "timestamp": "2026-01-03T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-07T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-11T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-15T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-19T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-23T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-27T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-31T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-04T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-08T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-12T00:00:00.000Z",
+        "equity": 9999,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-16T00:00:00.000Z",
+        "equity": 10025.576832292569,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-20T00:00:00.000Z",
+        "equity": 9998.71615524814,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-24T00:00:00.000Z",
+        "equity": 9963.743493979504,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-28T00:00:00.000Z",
+        "equity": 9983.254085870507,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-04T00:00:00.000Z",
+        "equity": 10019.675849293377,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-08T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-12T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-16T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-20T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-24T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-28T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-01T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-05T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-09T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-13T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-17T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-21T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-25T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-29T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-03T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-07T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-11T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-15T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-19T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-23T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-27T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-31T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-04T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-08T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-12T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-16T00:00:00.000Z",
+        "equity": 10002.969778003526,
+        "drawdown": 0
+      }
+    ],
+    "monthlyReturns": [
+      {
+        "month": "2026-01",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-02",
+        "return": -0.1674591412949303,
+        "trades": 0
+      },
+      {
+        "month": "2026-03",
+        "return": -0.16673265224472503,
+        "trades": 0
+      },
+      {
+        "month": "2026-04",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-05",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-06",
+        "return": 0,
+        "trades": 0
+      }
+    ],
+    "performance": {
+      "daily": [],
+      "weekly": [],
+      "monthly": []
+    },
+    "roi": {
+      "daily": [
+        {
+          "date": "2026-01-07",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-11",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-15",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-19",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-23",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-27",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-31",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-04",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-08",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-12",
+          "roi": -0.01,
+          "equity": 9999
+        },
+        {
+          "date": "2026-02-16",
+          "roi": 0.26579490241592885,
+          "equity": 10025.576832292569
+        },
+        {
+          "date": "2026-02-20",
+          "roi": -0.26792151208607423,
+          "equity": 9998.71615524814
+        },
+        {
+          "date": "2026-02-24",
+          "roi": -0.3497715179191173,
+          "equity": 9963.743493979504
+        },
+        {
+          "date": "2026-02-28",
+          "roi": 0.1958158788691434,
+          "equity": 9983.254085870507
+        },
+        {
+          "date": "2026-03-04",
+          "roi": 0.36482857302428345,
+          "equity": 10019.675849293377
+        },
+        {
+          "date": "2026-03-08",
+          "roi": -0.16673265224472503,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-12",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-16",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-20",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-24",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-03-28",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-01",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-05",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-09",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-13",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-17",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-21",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-25",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-04-29",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-03",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-07",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-11",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-15",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-19",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-23",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-27",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-05-31",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-04",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-08",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-12",
+          "roi": 0,
+          "equity": 10002.969778003526
+        },
+        {
+          "date": "2026-06-16",
+          "roi": 0,
+          "equity": 10002.969778003526
+        }
+      ],
+      "avgDaily": 0.0007808212697424174,
+      "medianDaily": 0,
+      "stdDev": 0.10639176430818555,
+      "profitableDays": 3,
+      "totalDays": 41,
+      "profitablePct": 7.317073170731707,
+      "bestDay": {
+        "date": "2026-03-04",
+        "roi": 0.36482857302428345,
+        "equity": 10019.675849293377
+      },
+      "worstDay": {
+        "date": "2026-02-24",
+        "roi": -0.3497715179191173,
+        "equity": 9963.743493979504
+      },
+      "longestWinStreak": 2,
+      "longestLossStreak": 2,
+      "annualisedReturn": 0.26469312109969056,
+      "monthly": [
+        {
+          "month": "2026-01",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-02",
+          "roi": -0.1674591412949303,
+          "days": 7
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.16673265224472503,
+          "days": 7
+        },
+        {
+          "month": "2026-04",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-05",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-06",
+          "roi": 0,
+          "days": 4
+        }
+      ]
+    }
+  },
+  {
+    "config": {
+      "label": "ETH ensemble + AI",
+      "symbol": "ETH/USD",
+      "startDate": "2024-06-01",
+      "endDate": "2025-06-01",
+      "initialCapital": 10000,
+      "strategy": "ensemble",
+      "enableAI": true,
+      "enableRiskManagement": true,
+      "aiConfig": {
+        "aiWeight": 0.5,
+        "minConfidence": 0.9
+      }
+    },
+    "summary": {
+      "totalTrades": 2,
+      "winningTrades": 2,
+      "losingTrades": 0,
+      "winRate": 100,
+      "totalReturn": 96.6960519862514,
+      "totalReturnPercent": 0.966960519862514,
+      "sharpeRatio": 32.79346091873511,
+      "sortinoRatio": null,
+      "maxDrawdown": 0,
+      "profitFactor": 0,
+      "avgWin": 49.349248634117075,
+      "avgLoss": 0,
+      "largestWin": 73.24567743516656,
+      "largestLoss": 0,
+      "avgHoldingPeriod": 0.000008333333333333334,
+      "finalCapital": 10096.696051986251,
+      "totalFees": 3.0289245811155063
+    },
+    "trades": [
+      {
+        "timestamp": "2026-02-28T00:00:00.000Z",
+        "symbol": "ETH/USD",
+        "action": "buy",
+        "price": 1931.32,
+        "quantity": 0.5177805852991736,
+        "value": 1000,
+        "fees": 1,
+        "reason": "Base buy signal with 70.0% confidence, AI analysis: bullish (85.9% confidence), Fusion score: 42.0%, Sentiment: Positive (45.0%), Enhanced confidence: 95.0%, AI significantly improved confidence (+25.0%)",
+        "aiConfidence": 0.95
+      },
+      {
+        "timestamp": "2026-03-04T00:00:00.000Z",
+        "symbol": "ETH/USD",
+        "action": "sell",
+        "price": 1982.46,
+        "quantity": 0.5177805852991736,
+        "value": 1026.4792991321997,
+        "fees": 1.0264792991321996,
+        "reason": "Base sell signal with 80.0% confidence, AI analysis: bullish (85.9% confidence), Fusion score: 42.0%, Sentiment: Positive (45.0%), Enhanced confidence: 95.0%, AI significantly improved confidence (+15.0%)",
+        "aiConfidence": 0.95
+      },
+      {
+        "timestamp": "2026-06-12T00:00:00.000Z",
+        "symbol": "ETH/USD",
+        "action": "buy",
+        "price": 1671.89,
+        "quantity": 0.5995880602092881,
+        "value": 1002.4452819833068,
+        "fees": 1.0024452819833067,
+        "reason": "Base buy signal with 70.0% confidence, AI analysis: bullish (85.9% confidence), Fusion score: 42.0%, Sentiment: Positive (45.0%), Enhanced confidence: 95.0%, AI significantly improved confidence (+25.0%)",
+        "aiConfidence": 0.95
+      },
+      {
+        "timestamp": "2026-06-16T00:00:00.000Z",
+        "symbol": "ETH/USD",
+        "action": "sell",
+        "price": 1794.05,
+        "quantity": 0.5995880602092881,
+        "value": 1075.6909594184733,
+        "fees": 0,
+        "reason": "End of backtest - closing position"
+      }
+    ],
+    "equityCurve": [
+      {
+        "timestamp": "2026-01-03T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-07T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-11T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-15T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-19T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-23T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-27T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-01-31T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-04T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-08T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-12T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-16T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-20T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-24T00:00:00.000Z",
+        "equity": 10000,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-02-28T00:00:00.000Z",
+        "equity": 9999,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-04T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-08T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-12T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-16T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-20T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-24T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-03-28T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-01T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-05T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-09T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-13T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-17T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-21T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-25T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-04-29T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-03T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-07T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-11T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-15T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-19T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-23T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-27T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-05-31T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-04T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-08T00:00:00.000Z",
+        "equity": 10024.452819833068,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-12T00:00:00.000Z",
+        "equity": 10023.450374551085,
+        "drawdown": 0
+      },
+      {
+        "timestamp": "2026-06-16T00:00:00.000Z",
+        "equity": 10096.696051986251,
+        "drawdown": 0
+      }
+    ],
+    "monthlyReturns": [
+      {
+        "month": "2026-01",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-02",
+        "return": -0.01,
+        "trades": 0
+      },
+      {
+        "month": "2026-03",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-04",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-05",
+        "return": 0,
+        "trades": 0
+      },
+      {
+        "month": "2026-06",
+        "return": 0.7206700799693753,
+        "trades": 0
+      }
+    ],
+    "performance": {
+      "daily": [],
+      "weekly": [],
+      "monthly": []
+    },
+    "roi": {
+      "daily": [
+        {
+          "date": "2026-01-07",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-11",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-15",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-19",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-23",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-27",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-01-31",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-04",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-08",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-12",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-16",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-20",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-24",
+          "roi": 0,
+          "equity": 10000
+        },
+        {
+          "date": "2026-02-28",
+          "roi": -0.01,
+          "equity": 9999
+        },
+        {
+          "date": "2026-03-04",
+          "roi": 0.25455365369605093,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-08",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-12",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-16",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-20",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-24",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-03-28",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-01",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-05",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-09",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-13",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-17",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-21",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-25",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-04-29",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-03",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-07",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-11",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-15",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-19",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-23",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-27",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-05-31",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-06-04",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-06-08",
+          "roi": 0,
+          "equity": 10024.452819833068
+        },
+        {
+          "date": "2026-06-12",
+          "roi": -0.01000000000000148,
+          "equity": 10023.450374551085
+        },
+        {
+          "date": "2026-06-16",
+          "roi": 0.7307431542848053,
+          "equity": 10096.696051986251
+        }
+      ],
+      "avgDaily": 0.023543824584898895,
+      "medianDaily": 0,
+      "stdDev": 0.11855392324876657,
+      "profitableDays": 2,
+      "totalDays": 41,
+      "profitablePct": 4.878048780487805,
+      "bestDay": {
+        "date": "2026-06-16",
+        "roi": 0.7307431542848053,
+        "equity": 10096.696051986251
+      },
+      "worstDay": {
+        "date": "2026-06-12",
+        "roi": -0.01000000000000148,
+        "equity": 10023.450374551085
+      },
+      "longestWinStreak": 1,
+      "longestLossStreak": 1,
+      "annualisedReturn": 8.944625004254148,
+      "monthly": [
+        {
+          "month": "2026-01",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-02",
+          "roi": -0.01,
+          "days": 7
+        },
+        {
+          "month": "2026-03",
+          "roi": 0,
+          "days": 7
+        },
+        {
+          "month": "2026-04",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-05",
+          "roi": 0,
+          "days": 8
+        },
+        {
+          "month": "2026-06",
+          "roi": 0.7206700799693753,
+          "days": 4
+        }
+      ]
+    }
+  }
+]
