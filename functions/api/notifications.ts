@@ -58,7 +58,7 @@ async function authenticateUser(request: Request, env: Env): Promise<string | nu
     const payload = JSON.parse(atob(parts[1]));
 
     // Check expiration
-    if (payload.exp && payload.exp < Date.now() / 1000) {
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, Activity, DollarSign, Globe, Zap, Play, Square, Settings, LogOut, Plus, ChevronDown, Wallet, BarChart2 } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { useTradingMode } from '../lib/TradingModeContext';
@@ -14,7 +13,7 @@ import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
   const { user, logout, token } = useAuth() as any;
-  const { mode, setMode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const { setMode, isPaperTrading, isLiveTrading } = useTradingMode();
   const navigate = useNavigate();
 
   const [portfolio, setPortfolio] = useState<Portfolio>({
@@ -47,12 +46,14 @@ const DashboardConnected = () => {
       ]);
 
       if (portfolioData) {
+        // /api/portfolio returns camelCase top-level fields (portfolio.ts handler)
+        // Fall back to the legacy nested shape for backwards compatibility
         setPortfolio({
-          total_value: portfolioData.portfolio?.total_value || 0,
-          daily_change: portfolioData.portfolio?.daily_change || 0,
-          daily_change_percent: portfolioData.portfolio?.daily_change_percent || 0,
-          unrealized_pnl: portfolioData.unrealizedPnL || 0,
-          realized_pnl: portfolioData.portfolio?.realized_pnl || 0,
+          total_value:          portfolioData.totalValue             ?? portfolioData.portfolio?.total_value             ?? 0,
+          daily_change:         portfolioData.totalPnL               ?? portfolioData.portfolio?.daily_change             ?? 0,
+          daily_change_percent: portfolioData.totalPnLPercent        ?? portfolioData.portfolio?.daily_change_percent     ?? 0,
+          unrealized_pnl:       portfolioData.unrealizedPnL          ?? 0,
+          realized_pnl:         portfolioData.realizedPnL            ?? portfolioData.portfolio?.realized_pnl             ?? 0,
         });
       }
 

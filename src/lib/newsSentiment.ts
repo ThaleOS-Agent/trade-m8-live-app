@@ -185,29 +185,20 @@ class NewsSentimentAnalyzer {
    */
   async getMarketSentiment(symbols: string[]): Promise<Map<string, SentimentAnalysis>> {
     const sentimentMap = new Map<string, SentimentAnalysis>();
-
-    for (const symbol of symbols) {
-      const analysis = await this.analyzeSymbol(symbol);
-      sentimentMap.set(symbol, analysis);
-    }
-
+    const results = await Promise.allSettled(symbols.map(s => this.analyzeSymbol(s)));
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') sentimentMap.set(symbols[i], result.value);
+    });
     return sentimentMap;
   }
 
-  /**
-   * Find symbols with most positive news sentiment
-   */
   async findBullishNews(symbols: string[], minScore: number = 30): Promise<SentimentAnalysis[]> {
-    const analyses: SentimentAnalysis[] = [];
-
-    for (const symbol of symbols) {
-      const analysis = await this.analyzeSymbol(symbol);
-      if (analysis.sentimentScore >= minScore) {
-        analyses.push(analysis);
-      }
-    }
-
-    return analyses.sort((a, b) => b.sentimentScore - a.sentimentScore);
+    const results = await Promise.allSettled(symbols.map(s => this.analyzeSymbol(s)));
+    return results
+      .filter((r): r is PromiseFulfilledResult<SentimentAnalysis> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .filter(a => a.sentimentScore >= minScore)
+      .sort((a, b) => b.sentimentScore - a.sentimentScore);
   }
 }
 

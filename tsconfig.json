@@ -25,6 +25,6 @@
     },
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src", "functions"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

@@ -419,49 +419,45 @@ export class BacktestingEngine {
 
   private calculateRSI(data: number[], period: number = 14): number {
     if (data.length < period + 1) return 50;
-
-    const changes = [];
-    for (let i = 1; i < data.length; i++) {
-      changes.push(data[i] - data[i - 1]);
+    const changes = data.slice(1).map((v, i) => v - data[i]);
+    // Wilder's smoothing (Fix #5)
+    let avgGain = changes.slice(0, period).reduce((s, c) => s + Math.max(c, 0), 0) / period;
+    let avgLoss = changes.slice(0, period).reduce((s, c) => s + Math.max(-c, 0), 0) / period;
+    for (const c of changes.slice(period)) {
+      avgGain = (avgGain * (period - 1) + Math.max(c, 0)) / period;
+      avgLoss = (avgLoss * (period - 1) + Math.max(-c, 0)) / period;
     }
-
-    const gains = changes.map(c => c > 0 ? c : 0);
-    const losses = changes.map(c => c < 0 ? -c : 0);
-
-    const avgGain = gains.slice(-period).reduce((sum, g) => sum + g, 0) / period;
-    const avgLoss = losses.slice(-period).reduce((sum, l) => sum + l, 0) / period;
-
     if (avgLoss === 0) return 100;
-
-    const rs = avgGain / avgLoss;
-    return 100 - (100 / (1 + rs));
+    return 100 - 100 / (1 + avgGain / avgLoss);
   }
 
   private calculateMACD(data: number[]): { value: number; signal: number; histogram: number } {
-    const ema12 = this.calculateEMA(data, 12);
-    const ema26 = this.calculateEMA(data, 26);
-    const macdLine = ema12 - ema26;
-
-    // For simplicity, using SMA for signal line instead of EMA
-    const signalLine = macdLine; // In production, calculate EMA of MACD line
-
-    return {
-      value: macdLine,
-      signal: signalLine,
-      histogram: macdLine - signalLine
-    };
+    if (data.length < 35) return { value: 0, signal: 0, histogram: 0 };
+    // Build MACD line with single incremental pass (Fix #8)
+    const fastK = 2 / 13, slowK = 2 / 27, sigK = 2 / 10;
+    const macdLine: number[] = [];
+    let fastEma = data[0], slowEma = data[0];
+    for (let i = 1; i < data.length; i++) {
+      fastEma = data[i] * fastK + fastEma * (1 - fastK);
+      slowEma = data[i] * slowK + slowEma * (1 - slowK);
+      if (i >= 25) macdLine.push(fastEma - slowEma);
+    }
+    // Signal line as EMA of MACD line
+    let sigEma = macdLine[0];
+    for (let i = 1; i < macdLine.length; i++) {
+      sigEma = macdLine[i] * sigK + sigEma * (1 - sigK);
+    }
+    const value = macdLine[macdLine.length - 1];
+    return { value, signal: sigEma, histogram: value - sigEma };
   }
 
   private calculateEMA(data: number[], period: number): number {
     if (data.length < period) return data[data.length - 1];
-
     const k = 2 / (period + 1);
-    let ema = data[0];
-
-    for (let i = 1; i < data.length; i++) {
+    let ema = data.slice(0, period).reduce((s, v) => s + v, 0) / period;
+    for (let i = period; i < data.length; i++) {
       ema = data[i] * k + ema * (1 - k);
     }
-
     return ema;
   }
 

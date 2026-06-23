@@ -153,7 +153,7 @@ export class TradingSystem {
     const position = this.portfolio.addPosition({
       symbol: result.symbol,
       side: result.side,
-      type: result.type,
+      type: result.type as 'market' | 'limit',
       quantity: result.executedAmount,
       entryPrice: result.executedPrice,
       fees: result.fees,

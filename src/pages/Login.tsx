@@ -6,7 +6,7 @@ import web3Service from '../lib/web3';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, updateUser } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

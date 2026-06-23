@@ -9,7 +9,7 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const { mode, setMode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const { setMode, isPaperTrading, isLiveTrading } = useTradingMode();
   const [activeTab, setActiveTab] = useState<'trading' | 'profile' | 'api' | 'notifications' | 'security'>('trading');
 
   const [profile, setProfile] = useState({

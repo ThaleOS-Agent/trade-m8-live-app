@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { TrendingUp, Activity, DollarSign, AlertCircle, Play, Square, Settings, RefreshCw, Globe, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Activity, DollarSign, Play, Square, Settings, Globe, Zap } from 'lucide-react';
 
 const XQTradeM8Dashboard = () => {
-  const [portfolioData, setPortfolioData] = useState({
+  const [portfolioData, _setPortfolioData] = useState({
     totalValue: 247850,
     dailyChange: 8450,
     dailyChangePercent: 3.41,
@@ -17,14 +17,14 @@ const XQTradeM8Dashboard = () => {
     { id: 3, name: 'Volatility Bot', strategy: 'Volatility', status: 'paused', pnl: 1445, trades: 8, winRate: 87.5 }
   ]);
 
-  const [recentTrades, setRecentTrades] = useState([
+  const [recentTrades, _setRecentTrades] = useState([
     { id: 1, symbol: 'BTC/USD', side: 'LONG', entry: 43200, exit: 44650, pnl: 892, time: '14:23' },
     { id: 2, symbol: 'EUR/USD', side: 'LONG', entry: 1.0965, exit: 1.1053, pnl: 145, time: '14:15' },
     { id: 3, symbol: 'ETH/USD', side: 'SHORT', entry: 2890, exit: 2810, pnl: 245, time: '13:47' },
     { id: 4, symbol: 'XAU/USD', side: 'LONG', entry: 2045.20, exit: 2078.50, pnl: 567, time: '12:58' }
   ]);
 
-  const [performanceData, setPerformanceData] = useState([
+  const [performanceData, _setPerformanceData] = useState([
     { date: 'Jan 23', value: 234200 },
     { date: 'Jan 24', value: 236500 },
     { date: 'Jan 25', value: 239800 },
@@ -54,7 +54,7 @@ const XQTradeM8Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleBot = (botId) => {
+  const toggleBot = (botId: number) => {
     setActiveBots(prev => prev.map(bot =>
       bot.id === botId
         ? { ...bot, status: bot.status === 'running' ? 'paused' : 'running' }

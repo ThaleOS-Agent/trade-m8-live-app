@@ -59,12 +59,18 @@ export interface OrderParams {
 export interface OrderResult {
   success: boolean;
   orderId?: string;
+  exchange?: string;
   symbol?: string;
   side?: string;
   type?: string;
   amount?: number;
+  filled?: number;
+  remaining?: number;
   price?: number;
   averagePrice?: number;
+  cost?: number;
+  fees?: number;
+  feeCurrency?: string;
   status?: string;
   timestamp?: string;
   error?: string;
