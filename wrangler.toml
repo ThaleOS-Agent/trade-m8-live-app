@@ -1,11 +1,9 @@
 # XQ Trade M8 — Cloudflare Pages + Workers Configuration
 # Canonical project: trade-m8-live-app (trade-m8.app)
-name = "trade-m8-live-app"
+name = "trade-m8-worker"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
-# wrangler.toml
-name = 'trade-m8-worker'
 
 # ==============================================================================
 # ENVIRONMENT VARIABLES
