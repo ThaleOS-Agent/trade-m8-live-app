@@ -1,0 +1,1982 @@
+[
+  {
+    "label": "Gold buy_the_dip",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "buy_the_dip",
+    "totalTrades": 1,
+    "wins": 0,
+    "losses": 1,
+    "winRate": 0,
+    "totalReturn": -64.93750831289617,
+    "totalReturnPct": -0.6493750831289617,
+    "finalCapital": 9935.062491687104,
+    "sharpe": -1.9951978884266053,
+    "maxDrawdown": 0.00983195379852243,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 63.68750815287892,
+    "avgHoldDays": 27,
+    "trades": [
+      {
+        "entryDate": "2026-04-28",
+        "exitDate": "2026-06-05",
+        "entryPrice": 4591.95915,
+        "exitPrice": 4362.3611925,
+        "quantity": 0.272215,
+        "pnl": -63.68750815287892,
+        "pnlPct": -5.095000000000003,
+        "exitReason": "stop_loss",
+        "holdDays": 27
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.016616116742468004,
+      "medianDaily": 0,
+      "stdDev": 0.13220376658734878,
+      "profitableDays": 13,
+      "totalDays": 39,
+      "profitablePct": 33.33333333333333,
+      "annualised": -5.915138995448266,
+      "best": {
+        "date": "2026-05-06",
+        "roi": 0.34364458977650675,
+        "equity": 10023.233221739236
+      },
+      "worst": {
+        "date": "2026-05-15",
+        "roi": -0.3321823356580501,
+        "equity": 9988.90688365574
+      },
+      "winStreak": 4,
+      "lossStreak": 4,
+      "monthly": [
+        {
+          "month": "2026-04",
+          "roi": 0.0494045348972395
+        },
+        {
+          "month": "2026-05",
+          "roi": -0.18874560012144836
+        },
+        {
+          "month": "2026-06",
+          "roi": -0.32009708698721356
+        }
+      ]
+    }
+  },
+  {
+    "label": "Gold trend_following",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "trend_following",
+    "totalTrades": 4,
+    "wins": 3,
+    "losses": 1,
+    "winRate": 75,
+    "totalReturn": 221.3773937932874,
+    "totalReturnPct": 2.2137739379328742,
+    "finalCapital": 10221.377393793287,
+    "sharpe": 1.815671840013835,
+    "maxDrawdown": 0.010148152080813577,
+    "profitFactor": 11.634098316088089,
+    "avgWin": 82.55509098080388,
+    "avgLoss": 21.287878631722613,
+    "avgHoldDays": 17.75,
+    "trades": [
+      {
+        "entryDate": "2025-10-22",
+        "exitDate": "2025-11-06",
+        "entryPrice": 4044.8043423339846,
+        "exitPrice": 3979.89990234375,
+        "quantity": 0.309038,
+        "pnl": -21.287878631722613,
+        "pnlPct": -1.7030326824864364,
+        "exitReason": "signal",
+        "holdDays": 11
+      },
+      {
+        "entryDate": "2025-11-17",
+        "exitDate": "2025-12-23",
+        "entryPrice": 4068.706878833008,
+        "exitPrice": 4475.577566716309,
+        "quantity": 0.307223,
+        "pnl": 123.62503297679207,
+        "pnlPct": 9.890000000000002,
+        "exitReason": "take_profit",
+        "holdDays": 25
+      },
+      {
+        "entryDate": "2025-12-29",
+        "exitDate": "2026-01-20",
+        "entryPrice": 4325.532607666016,
+        "exitPrice": 4758.085868432618,
+        "quantity": 0.288982,
+        "pnl": 123.62510523242275,
+        "pnlPct": 9.890000000000008,
+        "exitReason": "take_profit",
+        "holdDays": 14
+      },
+      {
+        "entryDate": "2026-02-17",
+        "exitDate": "2026-03-18",
+        "entryPrice": 4883.388192333984,
+        "exitPrice": 4889.89990234375,
+        "quantity": 0.25597,
+        "pnl": 0.4151347331968531,
+        "pnlPct": 0.03321075539249804,
+        "exitReason": "signal",
+        "holdDays": 21
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.011637731418743729,
+      "medianDaily": 0,
+      "stdDev": 0.10174925605077684,
+      "profitableDays": 41,
+      "totalDays": 189,
+      "profitablePct": 21.693121693121693,
+      "annualised": 4.319322980362883,
+      "best": {
+        "date": "2026-01-20",
+        "roi": 0.46843529850196564,
+        "equity": 10222.212259935683
+      },
+      "worst": {
+        "date": "2026-03-03",
+        "roi": -0.4635445182122967,
+        "equity": 10278.30253647129
+      },
+      "winStreak": 6,
+      "lossStreak": 4,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": -0.20597134080302565
+        },
+        {
+          "month": "2025-11",
+          "roi": 0.3722988426790277
+        },
+        {
+          "month": "2025-12",
+          "roi": 0.6978472565496393
+        },
+        {
+          "month": "2026-01",
+          "roi": 1.2564398990921615
+        },
+        {
+          "month": "2026-02",
+          "roi": 0.8569593969009338
+        },
+        {
+          "month": "2026-03",
+          "roi": -1.0148152080813577
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Gold momentum",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "momentum",
+    "totalTrades": 4,
+    "wins": 3,
+    "losses": 1,
+    "winRate": 75,
+    "totalReturn": 311.3267287657036,
+    "totalReturnPct": 3.113267287657036,
+    "finalCapital": 10311.326728765704,
+    "sharpe": 2.9342643637726806,
+    "maxDrawdown": 0.008114130657067644,
+    "profitFactor": 6.799073997318501,
+    "avgWin": 123.62484012867496,
+    "avgLoss": 54.547798793231955,
+    "avgHoldDays": 14.25,
+    "trades": [
+      {
+        "entryDate": "2025-09-25",
+        "exitDate": "2025-10-14",
+        "entryPrice": 3737.273592333984,
+        "exitPrice": 4111.000951567383,
+        "quantity": 0.334468,
+        "pnl": 123.62484412180753,
+        "pnlPct": 9.890000000000004,
+        "exitReason": "take_profit",
+        "holdDays": 13
+      },
+      {
+        "entryDate": "2025-11-18",
+        "exitDate": "2025-12-23",
+        "entryPrice": 4061.706178833008,
+        "exitPrice": 4467.876796716309,
+        "quantity": 0.307752,
+        "pnl": 123.62482197487877,
+        "pnlPct": 9.890000000000018,
+        "exitReason": "take_profit",
+        "holdDays": 24
+      },
+      {
+        "entryDate": "2026-01-14",
+        "exitDate": "2026-01-28",
+        "entryPrice": 4626.762434667969,
+        "exitPrice": 5089.438678134766,
+        "quantity": 0.270167,
+        "pnl": 123.62485428933854,
+        "pnlPct": 9.890000000000008,
+        "exitReason": "take_profit",
+        "holdDays": 9
+      },
+      {
+        "entryDate": "2026-03-03",
+        "exitDate": "2026-03-18",
+        "entryPrice": 5107.9106423339845,
+        "exitPrice": 4889.89990234375,
+        "quantity": 0.244718,
+        "pnl": -54.547798793231955,
+        "pnlPct": -4.363832014702729,
+        "exitReason": "signal",
+        "holdDays": 11
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.01600637496022028,
+      "medianDaily": 0,
+      "stdDev": 0.08659523945949751,
+      "profitableDays": 39,
+      "totalDays": 192,
+      "profitablePct": 20.3125,
+      "annualised": 6.001378009034863,
+      "best": {
+        "date": "2026-01-20",
+        "roi": 0.4519889696205495,
+        "equity": 10279.388023842723
+      },
+      "worst": {
+        "date": "2025-10-09",
+        "roi": -0.3211865691968752,
+        "equity": 10068.662662426803
+      },
+      "winStreak": 7,
+      "lossStreak": 4,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0.3337628842680169
+        },
+        {
+          "month": "2025-10",
+          "roi": 0.797309636614133
+        },
+        {
+          "month": "2025-11",
+          "roi": 0.463744961627978
+        },
+        {
+          "month": "2025-12",
+          "roi": 0.6777861831120119
+        },
+        {
+          "month": "2026-01",
+          "roi": 1.194512894027094
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.538218638485355
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Gold rsi_reversion",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "rsi_reversion",
+    "totalTrades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "totalReturn": 0,
+    "totalReturnPct": 0,
+    "finalCapital": 10000,
+    "sharpe": 0,
+    "maxDrawdown": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "avgHoldDays": 0,
+    "trades": [],
+    "roi": {
+      "avgDaily": 0,
+      "medianDaily": 0,
+      "stdDev": 0,
+      "profitableDays": 0,
+      "totalDays": 192,
+      "profitablePct": 0,
+      "annualised": 0,
+      "best": {
+        "date": "2025-09-16",
+        "roi": 0,
+        "equity": 10000
+      },
+      "worst": {
+        "date": "2025-09-16",
+        "roi": 0,
+        "equity": 10000
+      },
+      "winStreak": 0,
+      "lossStreak": 0,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Gold breakout",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "breakout",
+    "totalTrades": 2,
+    "wins": 1,
+    "losses": 1,
+    "winRate": 50,
+    "totalReturn": 57.43745095751365,
+    "totalReturnPct": 0.5743745095751365,
+    "finalCapital": 10057.437450957514,
+    "sharpe": 0.6959691771093935,
+    "maxDrawdown": 0.006668969535062141,
+    "profitFactor": 1.941119119910688,
+    "avgWin": 123.62486736741856,
+    "avgLoss": 63.68741933421716,
+    "avgHoldDays": 7.5,
+    "trades": [
+      {
+        "entryDate": "2025-09-29",
+        "exitDate": "2025-10-16",
+        "entryPrice": 3821.2819923339844,
+        "exitPrice": 4203.410191567383,
+        "quantity": 0.327115,
+        "pnl": 123.62486736741856,
+        "pnlPct": 9.89,
+        "exitReason": "take_profit",
+        "holdDays": 13
+      },
+      {
+        "entryDate": "2026-01-28",
+        "exitDate": "2026-01-30",
+        "entryPrice": 5302.1302576660155,
+        "exitPrice": 5037.023744782715,
+        "quantity": 0.235754,
+        "pnl": -63.68741933421716,
+        "pnlPct": -5.094999999999997,
+        "exitReason": "stop_loss",
+        "holdDays": 2
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.0030384760390065975,
+      "medianDaily": 0,
+      "stdDev": 0.06930524133751796,
+      "profitableDays": 12,
+      "totalDays": 190,
+      "profitablePct": 6.315789473684211,
+      "annualised": 1.1063218861832702,
+      "best": {
+        "date": "2025-10-13",
+        "roi": 0.4319515203922375,
+        "equity": 10092.73606336357
+      },
+      "worst": {
+        "date": "2026-01-30",
+        "roi": -0.666896953506214,
+        "equity": 10057.437450957514
+      },
+      "winStreak": 5,
+      "lossStreak": 1,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0.05134650391157265
+        },
+        {
+          "month": "2025-10",
+          "roi": 1.0835598914934073
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": -0.641523541592241
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Gold dual_ma",
+    "symbol": "XAU/USD",
+    "asset": "Gold",
+    "strategy": "dual_ma",
+    "totalTrades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "totalReturn": 0,
+    "totalReturnPct": 0,
+    "finalCapital": 10000,
+    "sharpe": 0,
+    "maxDrawdown": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "avgHoldDays": 0,
+    "trades": [],
+    "roi": {
+      "avgDaily": 0,
+      "medianDaily": 0,
+      "stdDev": 0,
+      "profitableDays": 0,
+      "totalDays": 190,
+      "profitablePct": 0,
+      "annualised": 0,
+      "best": {
+        "date": "2025-09-16",
+        "roi": 0,
+        "equity": 10000
+      },
+      "worst": {
+        "date": "2025-09-16",
+        "roi": 0,
+        "equity": 10000
+      },
+      "winStreak": 0,
+      "lossStreak": 0,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Silver buy_the_dip",
+    "symbol": "XAG/USD",
+    "asset": "Silver",
+    "strategy": "buy_the_dip",
+    "totalTrades": 3,
+    "wins": 1,
+    "losses": 2,
+    "winRate": 33.33333333333333,
+    "totalReturn": 49.283742476896805,
+    "totalReturnPct": 0.4928374247689681,
+    "finalCapital": 10049.283742476897,
+    "sharpe": 0.5040868248928555,
+    "maxDrawdown": 0.01891562161022145,
+    "profitFactor": 1.3192169573661112,
+    "avgWin": 219.17072612412576,
+    "avgLoss": 83.06849184296118,
+    "avgHoldDays": 14,
+    "trades": [
+      {
+        "entryDate": "2026-04-07",
+        "exitDate": "2026-05-11",
+        "entryPrice": 71.83317899856567,
+        "exitPrice": 84.51267603618076,
+        "quantity": 17.401429,
+        "pnl": 219.17072612412576,
+        "pnlPct": 17.53365859226473,
+        "exitReason": "take_profit",
+        "holdDays": 24
+      },
+      {
+        "entryDate": "2026-05-19",
+        "exitDate": "2026-06-08",
+        "entryPrice": 74.83548572998046,
+        "exitPrice": 68.77077102573939,
+        "quantity": 16.703306,
+        "pnl": -102.44948473993693,
+        "pnlPct": -8.195958662441903,
+        "exitReason": "stop_loss",
+        "holdDays": 13
+      },
+      {
+        "entryDate": "2026-06-12",
+        "exitDate": "2026-06-19",
+        "entryPrice": 67.86578705978394,
+        "exitPrice": 64.47249770679474,
+        "quantity": 18.418706,
+        "pnl": -63.687498945985425,
+        "pnlPct": -5.095000000000004,
+        "exitReason": "stop_loss",
+        "holdDays": 5
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.010673000938287418,
+      "medianDaily": 0,
+      "stdDev": 0.33611002903878234,
+      "profitableDays": 23,
+      "totalDays": 50,
+      "profitablePct": 46,
+      "annualised": 3.7581555445511228,
+      "best": {
+        "date": "2026-05-11",
+        "roi": 0.6916109307079108,
+        "equity": 10217.920726159939
+      },
+      "worst": {
+        "date": "2026-06-18",
+        "roi": -0.8046896489542212,
+        "equity": 10083.302577551629
+      },
+      "winStreak": 5,
+      "lossStreak": 3,
+      "monthly": [
+        {
+          "month": "2026-04",
+          "roi": 0.2972573116906276
+        },
+        {
+          "month": "2026-05",
+          "roi": 1.5818820440759571
+        },
+        {
+          "month": "2026-06",
+          "roi": -1.6659455784331707
+        }
+      ]
+    }
+  },
+  {
+    "label": "Silver trend_following",
+    "symbol": "XAG/USD",
+    "asset": "Silver",
+    "strategy": "trend_following",
+    "totalTrades": 2,
+    "wins": 1,
+    "losses": 1,
+    "winRate": 50,
+    "totalReturn": 91.12602082578087,
+    "totalReturnPct": 0.9112602082578087,
+    "finalCapital": 10091.12602082578,
+    "sharpe": 0.7351402325197104,
+    "maxDrawdown": 0.008929568780062052,
+    "profitFactor": 2.5026985235446944,
+    "avgWin": 155.93127994468222,
+    "avgLoss": 62.30525909442306,
+    "avgHoldDays": 11.5,
+    "trades": [
+      {
+        "entryDate": "2025-10-29",
+        "exitDate": "2025-11-28",
+        "entryPrice": 47.725772771453855,
+        "exitPrice": 53.733058570752824,
+        "quantity": 26.191299,
+        "pnl": 155.93127994468222,
+        "pnlPct": 12.474502548629673,
+        "exitReason": "take_profit",
+        "holdDays": 21
+      },
+      {
+        "entryDate": "2026-03-11",
+        "exitDate": "2026-03-13",
+        "entryPrice": 85.07350894165039,
+        "exitPrice": 80.91400146484375,
+        "quantity": 14.693176,
+        "pnl": -62.30525909442306,
+        "pnlPct": -4.984420568781137,
+        "exitReason": "signal",
+        "holdDays": 2
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.004828823777328641,
+      "medianDaily": 0,
+      "stdDev": 0.10427289603762432,
+      "profitableDays": 12,
+      "totalDays": 190,
+      "profitablePct": 6.315789473684211,
+      "annualised": 1.7579235306583119,
+      "best": {
+        "date": "2025-11-12",
+        "roi": 0.7055754179459459,
+        "equity": 10145.584392803212
+      },
+      "worst": {
+        "date": "2025-11-14",
+        "roi": -0.6416838629369511,
+        "equity": 10073.767835758606
+      },
+      "winStreak": 4,
+      "lossStreak": 3,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0.057752059701160756
+        },
+        {
+          "month": "2025-11",
+          "roi": 1.516368501034509
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.6258715304010868
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Silver momentum",
+    "symbol": "XAG/USD",
+    "asset": "Silver",
+    "strategy": "momentum",
+    "totalTrades": 7,
+    "wins": 4,
+    "losses": 3,
+    "winRate": 57.14285714285714,
+    "totalReturn": 338.81105784740066,
+    "totalReturnPct": 3.3881105784740067,
+    "finalCapital": 10338.8110578474,
+    "sharpe": 1.0875527989936096,
+    "maxDrawdown": 0.021169220376262465,
+    "profitFactor": 2.2786819176690702,
+    "avgWin": 154.8432583108287,
+    "avgLoss": 90.6039917844098,
+    "avgHoldDays": 6.714285714285714,
+    "trades": [
+      {
+        "entryDate": "2025-10-02",
+        "exitDate": "2025-10-15",
+        "entryPrice": 46.004599999999996,
+        "exitPrice": 50.60506,
+        "quantity": 27.171196,
+        "pnl": 123.62500034630838,
+        "pnlPct": 9.890000000000013,
+        "exitReason": "take_profit",
+        "holdDays": 9
+      },
+      {
+        "entryDate": "2025-10-20",
+        "exitDate": "2025-10-21",
+        "entryPrice": 51.12411138114929,
+        "exitPrice": 48.17457492136274,
+        "quantity": 24.450303,
+        "pnl": -73.294943105052,
+        "pnlPct": -5.863595383318961,
+        "exitReason": "stop_loss",
+        "holdDays": 1
+      },
+      {
+        "entryDate": "2025-11-18",
+        "exitDate": "2025-11-28",
+        "entryPrice": 50.45504576301575,
+        "exitPrice": 55.50055033931733,
+        "quantity": 24.774529,
+        "pnl": 123.62499945131889,
+        "pnlPct": 9.890000000000015,
+        "exitReason": "take_profit",
+        "holdDays": 7
+      },
+      {
+        "entryDate": "2025-12-29",
+        "exitDate": "2026-01-06",
+        "entryPrice": 69.86298840789794,
+        "exitPrice": 79.43534095349992,
+        "quantity": 17.892163,
+        "pnl": 169.84882197107484,
+        "pnlPct": 13.58790601573423,
+        "exitReason": "take_profit",
+        "holdDays": 5
+      },
+      {
+        "entryDate": "2026-01-06",
+        "exitDate": "2026-01-20",
+        "entryPrice": 80.53805177917481,
+        "exitPrice": 93.66433270002094,
+        "quantity": 15.520614,
+        "pnl": 202.27421147461268,
+        "pnlPct": 16.181936737034437,
+        "exitReason": "take_profit",
+        "holdDays": 9
+      },
+      {
+        "entryDate": "2026-02-25",
+        "exitDate": "2026-03-05",
+        "entryPrice": 90.94809689102173,
+        "exitPrice": 82.51927396490916,
+        "quantity": 13.744103,
+        "pnl": -116.98076386611154,
+        "pnlPct": -9.358461024507386,
+        "exitReason": "stop_loss",
+        "holdDays": 6
+      },
+      {
+        "entryDate": "2026-04-14",
+        "exitDate": "2026-04-28",
+        "entryPrice": 79.39893794021606,
+        "exitPrice": 74.29411768875121,
+        "quantity": 15.743284,
+        "pnl": -81.53626838206588,
+        "pnlPct": -6.522901317714404,
+        "exitReason": "stop_loss",
+        "holdDays": 10
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.017688382340354792,
+      "medianDaily": 0,
+      "stdDev": 0.25818917928901636,
+      "profitableDays": 27,
+      "totalDays": 192,
+      "profitablePct": 14.0625,
+      "annualised": 6.539145937835489,
+      "best": {
+        "date": "2025-12-30",
+        "roi": 1.3227995758869162,
+        "equity": 10303.343310233724
+      },
+      "worst": {
+        "date": "2025-12-31",
+        "roi": -1.2572542523119863,
+        "equity": 10173.804088335508
+      },
+      "winStreak": 5,
+      "lossStreak": 4,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0.47830057223880434
+        },
+        {
+          "month": "2025-11",
+          "roi": 1.2179246539792592
+        },
+        {
+          "month": "2025-12",
+          "roi": 0.035387994978482225
+        },
+        {
+          "month": "2026-01",
+          "roi": 3.520882810067498
+        },
+        {
+          "month": "2026-02",
+          "roi": 0.21424383597176672
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.765238834369987
+        },
+        {
+          "month": "2026-04",
+          "roi": -0.7943721659900115
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Oil buy_the_dip",
+    "symbol": "WTI/USD",
+    "asset": "Oil",
+    "strategy": "buy_the_dip",
+    "totalTrades": 1,
+    "wins": 0,
+    "losses": 1,
+    "winRate": 0,
+    "totalReturn": -185.15947638024045,
+    "totalReturnPct": -1.8515947638024044,
+    "finalCapital": 9814.84052361976,
+    "sharpe": -1.1825585700453805,
+    "maxDrawdown": 0.041201618860624206,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 183.90947636793263,
+    "avgHoldDays": 44,
+    "trades": [
+      {
+        "entryDate": "2026-04-14",
+        "exitDate": "2026-06-16",
+        "entryPrice": 91.28912677917481,
+        "exitPrice": 77.93591442260742,
+        "quantity": 13.692759,
+        "pnl": -183.90947636793263,
+        "pnlPct": -14.712757964570597,
+        "exitReason": "stop_loss",
+        "holdDays": 44
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.035501117251777396,
+      "medianDaily": 0,
+      "stdDev": 0.4765622433883002,
+      "profitableDays": 23,
+      "totalDays": 51,
+      "profitablePct": 45.09803921568628,
+      "annualised": -12.519850726455605,
+      "best": {
+        "date": "2026-04-29",
+        "roi": 0.9406345684222044,
+        "equity": 10212.232031991718
+      },
+      "worst": {
+        "date": "2026-04-17",
+        "roi": -1.4775995262653396,
+        "equity": 9896.887808936512
+      },
+      "winStreak": 4,
+      "lossStreak": 4,
+      "monthly": [
+        {
+          "month": "2026-04",
+          "roi": 1.8744817163130576
+        },
+        {
+          "month": "2026-05",
+          "roi": -1.9679499494832022
+        },
+        {
+          "month": "2026-06",
+          "roi": -1.9562535930022322
+        }
+      ]
+    }
+  },
+  {
+    "label": "Oil trend_following",
+    "symbol": "WTI/USD",
+    "asset": "Oil",
+    "strategy": "trend_following",
+    "totalTrades": 2,
+    "wins": 0,
+    "losses": 2,
+    "winRate": 0,
+    "totalReturn": -222.9357233196115,
+    "totalReturnPct": -2.229357233196115,
+    "finalCapital": 9777.064276680389,
+    "sharpe": -1.0727130542352097,
+    "maxDrawdown": 0.02532589818303811,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 110.21786168698148,
+    "avgHoldDays": 7.5,
+    "trades": [
+      {
+        "entryDate": "2026-04-10",
+        "exitDate": "2026-04-17",
+        "entryPrice": 96.5796566947937,
+        "exitPrice": 83.8499984741211,
+        "quantity": 12.942684,
+        "pnl": -165.84118781181883,
+        "pnlPct": -13.267295264508288,
+        "exitReason": "signal",
+        "holdDays": 5
+      },
+      {
+        "entryDate": "2026-05-11",
+        "exitDate": "2026-05-26",
+        "entryPrice": 98.0798066947937,
+        "exitPrice": 93.88999938964844,
+        "quantity": 12.744723,
+        "pnl": -54.594535562144124,
+        "pnlPct": -4.367562956017023,
+        "exitReason": "signal",
+        "holdDays": 10
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.011837392895848885,
+      "medianDaily": 0,
+      "stdDev": 0.1751752585659037,
+      "profitableDays": 8,
+      "totalDays": 188,
+      "profitablePct": 4.25531914893617,
+      "annualised": -4.282830070301246,
+      "best": {
+        "date": "2026-05-15",
+        "roi": 0.5487269763354139,
+        "equity": 9925.207519347558
+      },
+      "worst": {
+        "date": "2026-04-17",
+        "roi": -1.4174838531957705,
+        "equity": 9832.908812210751
+      },
+      "winStreak": 3,
+      "lossStreak": 3,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": -1.6709118778924856
+        },
+        {
+          "month": "2026-05",
+          "roi": -0.5679350495045147
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "Oil momentum",
+    "symbol": "WTI/USD",
+    "asset": "Oil",
+    "strategy": "momentum",
+    "totalTrades": 6,
+    "wins": 3,
+    "losses": 3,
+    "winRate": 50,
+    "totalReturn": 420.9050076005078,
+    "totalReturnPct": 4.209050076005078,
+    "finalCapital": 10420.905007600508,
+    "sharpe": 1.3902300041710218,
+    "maxDrawdown": 0.01890707474779283,
+    "profitFactor": 3.4144501363999447,
+    "avgWin": 201.9462615968699,
+    "avgLoss": 59.14459240274444,
+    "avgHoldDays": 10.333333333333334,
+    "trades": [
+      {
+        "entryDate": "2025-09-26",
+        "exitDate": "2025-09-30",
+        "entryPrice": 65.72657322082519,
+        "exitPrice": 62.44024455978393,
+        "quantity": 19.018183,
+        "pnl": -63.68749987143038,
+        "pnlPct": -5.0950000000000015,
+        "exitReason": "stop_loss",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2025-10-24",
+        "exitDate": "2025-11-12",
+        "entryPrice": 61.50615,
+        "exitPrice": 58.4900016784668,
+        "quantity": 20.323171,
+        "pnl": -62.486400405783996,
+        "pnlPct": -4.998912016459603,
+        "exitReason": "signal",
+        "holdDays": 13
+      },
+      {
+        "entryDate": "2026-01-05",
+        "exitDate": "2026-01-07",
+        "entryPrice": 58.3258316947937,
+        "exitPrice": 55.9900016784668,
+        "quantity": 21.431327,
+        "pnl": -51.259876931018944,
+        "pnlPct": -4.100790247657742,
+        "exitReason": "signal",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2026-01-12",
+        "exitDate": "2026-02-19",
+        "entryPrice": 59.50595,
+        "exitPrice": 65.456545,
+        "quantity": 21.006303,
+        "pnl": 123.625001582682,
+        "pnlPct": 9.890000000000013,
+        "exitReason": "take_profit",
+        "holdDays": 26
+      },
+      {
+        "entryDate": "2026-02-27",
+        "exitDate": "2026-03-03",
+        "entryPrice": 67.02669864273071,
+        "exitPrice": 73.72936850700378,
+        "quantity": 18.649285,
+        "pnl": 123.62500055358278,
+        "pnlPct": 9.890000000000008,
+        "exitReason": "take_profit",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2026-03-10",
+        "exitDate": "2026-04-02",
+        "entryPrice": 83.45834194793701,
+        "exitPrice": 107.5076300164359,
+        "quantity": 14.977532,
+        "pnl": 358.58878265434487,
+        "pnlPct": 28.687102906283247,
+        "exitReason": "take_profit",
+        "holdDays": 17
+      }
+    ],
+    "roi": {
+      "avgDaily": 0.022135900680632335,
+      "medianDaily": 0,
+      "stdDev": 0.2527614340289002,
+      "profitableDays": 37,
+      "totalDays": 189,
+      "profitablePct": 19.576719576719576,
+      "annualised": 8.287738329623618,
+      "best": {
+        "date": "2026-03-12",
+        "roi": 1.2551456900842424,
+        "equity": 10246.115426392573
+      },
+      "worst": {
+        "date": "2026-03-23",
+        "roi": -1.483932572105139,
+        "equity": 10132.286091776972
+      },
+      "winStreak": 4,
+      "lossStreak": 3,
+      "monthly": [
+        {
+          "month": "2025-09",
+          "roi": -0.6493749986890726
+        },
+        {
+          "month": "2025-10",
+          "roi": -0.12021107797463955
+        },
+        {
+          "month": "2025-11",
+          "roi": -0.5362058024695536
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0.6692222079316402
+        },
+        {
+          "month": "2026-02",
+          "roi": 0.6777987113005122
+        },
+        {
+          "month": "2026-03",
+          "roi": 3.118369463347138
+        },
+        {
+          "month": "2026-04",
+          "roi": 1.0574052901080744
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "BTC buy_the_dip",
+    "symbol": "BTC/USD",
+    "asset": "BTC",
+    "strategy": "buy_the_dip",
+    "totalTrades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "totalReturn": 0,
+    "totalReturnPct": 0,
+    "finalCapital": 10000,
+    "sharpe": 0,
+    "maxDrawdown": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "avgHoldDays": 0,
+    "trades": [],
+    "roi": {
+      "avgDaily": 0,
+      "medianDaily": 0,
+      "stdDev": 0,
+      "profitableDays": 0,
+      "totalDays": 165,
+      "profitablePct": 0,
+      "annualised": 0,
+      "best": {
+        "date": "2026-01-07",
+        "roi": 0,
+        "equity": 10000
+      },
+      "worst": {
+        "date": "2026-01-07",
+        "roi": 0,
+        "equity": 10000
+      },
+      "winStreak": 0,
+      "lossStreak": 0,
+      "monthly": [
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "BTC trend_following",
+    "symbol": "BTC/USD",
+    "asset": "BTC",
+    "strategy": "trend_following",
+    "totalTrades": 1,
+    "wins": 0,
+    "losses": 1,
+    "winRate": 0,
+    "totalReturn": -41.512134811868236,
+    "totalReturnPct": -0.4151213481186824,
+    "finalCapital": 9958.487865188132,
+    "sharpe": -0.8219652309250034,
+    "maxDrawdown": 0.006792815634562059,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 40.262115956445896,
+    "avgHoldDays": 6,
+    "trades": [
+      {
+        "entryDate": "2026-05-14",
+        "exitDate": "2026-05-20",
+        "entryPrice": 79285.73229883423,
+        "exitPrice": 76808.8105527178,
+        "quantity": 0.015766,
+        "pnl": -40.262115956445896,
+        "pnlPct": -3.220920691056925,
+        "exitReason": "signal",
+        "holdDays": 6
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.0013969733664880625,
+      "medianDaily": 0,
+      "stdDev": 0.026979565389271327,
+      "profitableDays": 1,
+      "totalDays": 297,
+      "profitablePct": 0.33670033670033667,
+      "annualised": -0.5099232647510221,
+      "best": {
+        "date": "2026-05-15",
+        "roi": 0.2797554283358373,
+        "equity": 10026.59668793136
+      },
+      "worst": {
+        "date": "2026-05-16",
+        "roi": -0.31183604240222496,
+        "equity": 9995.330145632082
+      },
+      "winStreak": 1,
+      "lossStreak": 5,
+      "monthly": [
+        {
+          "month": "2025-08",
+          "roi": 0
+        },
+        {
+          "month": "2025-09",
+          "roi": 0
+        },
+        {
+          "month": "2025-10",
+          "roi": 0
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": -0.4151213481186824
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "BTC momentum",
+    "symbol": "BTC/USD",
+    "asset": "BTC",
+    "strategy": "momentum",
+    "totalTrades": 6,
+    "wins": 1,
+    "losses": 5,
+    "winRate": 16.666666666666664,
+    "totalReturn": -111.20521820039357,
+    "totalReturnPct": -1.1120521820039357,
+    "finalCapital": 9888.794781799606,
+    "sharpe": -0.4566540443576051,
+    "maxDrawdown": 0.028854477557202444,
+    "profitFactor": 0.5438086725032748,
+    "avgWin": 123.62318584458559,
+    "avgLoss": 45.46569118713021,
+    "avgHoldDays": 13.333333333333334,
+    "trades": [
+      {
+        "entryDate": "2025-09-11",
+        "exitDate": "2025-09-23",
+        "entryPrice": 113986.72242717713,
+        "exitPrice": 112696.74101711863,
+        "quantity": 0.010966,
+        "pnl": -15.381768604695145,
+        "pnlPct": -1.2305627543346038,
+        "exitReason": "signal",
+        "holdDays": 12
+      },
+      {
+        "entryDate": "2025-10-03",
+        "exitDate": "2025-10-11",
+        "entryPrice": 120623.7802878221,
+        "exitPrice": 114592.59127343098,
+        "quantity": 0.010363,
+        "pnl": -63.688734779501694,
+        "pnlPct": -5.095000000000009,
+        "exitReason": "stop_loss",
+        "holdDays": 8
+      },
+      {
+        "entryDate": "2026-01-06",
+        "exitDate": "2026-01-21",
+        "entryPrice": 93936.18832813067,
+        "exitPrice": 89239.37891172412,
+        "quantity": 0.013307,
+        "pnl": -63.68795131930015,
+        "pnlPct": -5.095000000000008,
+        "exitReason": "stop_loss",
+        "holdDays": 15
+      },
+      {
+        "entryDate": "2026-03-05",
+        "exitDate": "2026-03-07",
+        "entryPrice": 72677.03714223813,
+        "exitPrice": 69043.18528512622,
+        "quantity": 0.017199,
+        "pnl": -63.68609183418655,
+        "pnlPct": -5.094999999999999,
+        "exitReason": "stop_loss",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2026-03-11",
+        "exitDate": "2026-03-27",
+        "entryPrice": 69889.9971766864,
+        "exitPrice": 68791.11093800364,
+        "quantity": 0.017885,
+        "pnl": -20.883909397967496,
+        "pnlPct": -1.6707360091442098,
+        "exitReason": "signal",
+        "holdDays": 16
+      },
+      {
+        "entryDate": "2026-04-08",
+        "exitDate": "2026-05-05",
+        "entryPrice": 71982.81927262977,
+        "exitPrice": 79181.10119989276,
+        "quantity": 0.017365,
+        "pnl": 123.62318584458559,
+        "pnlPct": 9.890000000000011,
+        "exitReason": "take_profit",
+        "holdDays": 27
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.0036235002484193823,
+      "medianDaily": 0,
+      "stdDev": 0.12596249591593647,
+      "profitableDays": 41,
+      "totalDays": 302,
+      "profitablePct": 13.57615894039735,
+      "annualised": -1.3424730037498667,
+      "best": {
+        "date": "2026-04-14",
+        "roi": 0.6697081949404965,
+        "equity": 9809.136490391445
+      },
+      "worst": {
+        "date": "2025-10-11",
+        "roi": -0.748717247491638,
+        "equity": 9918.429493982543
+      },
+      "winStreak": 6,
+      "lossStreak": 6,
+      "monthly": [
+        {
+          "month": "2025-08",
+          "roi": 0
+        },
+        {
+          "month": "2025-09",
+          "roi": -0.16631747002831618
+        },
+        {
+          "month": "2025-10",
+          "roi": -0.650469434452942
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": -0.654720187473037
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.8836457198420586
+        },
+        {
+          "month": "2026-04",
+          "roi": 0.6614423539662055
+        },
+        {
+          "month": "2026-05",
+          "roi": 0.49683837695513766
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "ETH buy_the_dip",
+    "symbol": "ETH/USD",
+    "asset": "ETH",
+    "strategy": "buy_the_dip",
+    "totalTrades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "totalReturn": 0,
+    "totalReturnPct": 0,
+    "finalCapital": 10000,
+    "sharpe": 0,
+    "maxDrawdown": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "avgHoldDays": 0,
+    "trades": [],
+    "roi": {
+      "avgDaily": 0,
+      "medianDaily": 0,
+      "stdDev": 0,
+      "profitableDays": 0,
+      "totalDays": 165,
+      "profitablePct": 0,
+      "annualised": 0,
+      "best": {
+        "date": "2026-01-07",
+        "roi": 0,
+        "equity": 10000
+      },
+      "worst": {
+        "date": "2026-01-07",
+        "roi": 0,
+        "equity": 10000
+      },
+      "winStreak": 0,
+      "lossStreak": 0,
+      "monthly": [
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": 0
+        },
+        {
+          "month": "2026-05",
+          "roi": 0
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "ETH trend_following",
+    "symbol": "ETH/USD",
+    "asset": "ETH",
+    "strategy": "trend_following",
+    "totalTrades": 3,
+    "wins": 0,
+    "losses": 3,
+    "winRate": 0,
+    "totalReturn": -91.01981717845047,
+    "totalReturnPct": -0.9101981717845046,
+    "finalCapital": 9908.98018282155,
+    "sharpe": -0.7502714528755345,
+    "maxDrawdown": 0.012790721489688022,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 29.089939891641254,
+    "avgHoldDays": 9.333333333333334,
+    "trades": [
+      {
+        "entryDate": "2025-08-30",
+        "exitDate": "2025-09-08",
+        "entryPrice": 4364.794957282569,
+        "exitPrice": 4304.032421076036,
+        "quantity": 0.286382,
+        "pnl": -18.633894056711874,
+        "pnlPct": -1.4907130636009975,
+        "exitReason": "signal",
+        "holdDays": 9
+      },
+      {
+        "entryDate": "2025-09-20",
+        "exitDate": "2025-09-23",
+        "entryPrice": 4470.926521956788,
+        "exitPrice": 4247.380195858948,
+        "quantity": 0.279584,
+        "pnl": -63.687475580417384,
+        "pnlPct": -5.095000000000002,
+        "exitReason": "stop_loss",
+        "holdDays": 3
+      },
+      {
+        "entryDate": "2026-04-29",
+        "exitDate": "2026-05-15",
+        "entryPrice": 2288.2737314417036,
+        "exitPrice": 2281.4964960855596,
+        "quantity": 0.546263,
+        "pnl": -4.948450037794502,
+        "pnlPct": -0.39587623315162757,
+        "exitReason": "signal",
+        "holdDays": 16
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.0030173008240795786,
+      "medianDaily": 0,
+      "stdDev": 0.06384111441736395,
+      "profitableDays": 17,
+      "totalDays": 301,
+      "profitablePct": 5.647840531561462,
+      "annualised": -1.1026580923800045,
+      "best": {
+        "date": "2025-09-04",
+        "roi": 0.3555855582156741,
+        "equity": 10023.11313101568
+      },
+      "worst": {
+        "date": "2025-09-23",
+        "roi": -0.5879340924378551,
+        "equity": 9915.178632132702
+      },
+      "winStreak": 6,
+      "lossStreak": 3,
+      "monthly": [
+        {
+          "month": "2025-08",
+          "roi": 0.012029777702391584
+        },
+        {
+          "month": "2025-09",
+          "roi": -0.9043242516029855
+        },
+        {
+          "month": "2025-10",
+          "roi": 0
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": 0
+        },
+        {
+          "month": "2026-01",
+          "roi": 0
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": 0
+        },
+        {
+          "month": "2026-04",
+          "roi": -0.20441739264074996
+        },
+        {
+          "month": "2026-05",
+          "roi": 0.12825274779690068
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  },
+  {
+    "label": "ETH momentum",
+    "symbol": "ETH/USD",
+    "asset": "ETH",
+    "strategy": "momentum",
+    "totalTrades": 10,
+    "wins": 1,
+    "losses": 9,
+    "winRate": 10,
+    "totalReturn": -471.6717641491614,
+    "totalReturnPct": -4.7167176414916145,
+    "finalCapital": 9528.328235850839,
+    "sharpe": -1.3873397657632758,
+    "maxDrawdown": 0.04716717641491614,
+    "profitFactor": 0.21212359791966887,
+    "avgWin": 123.62493119356189,
+    "avgLoss": 64.75518801615452,
+    "avgHoldDays": 8.7,
+    "trades": [
+      {
+        "entryDate": "2025-08-19",
+        "exitDate": "2025-08-20",
+        "entryPrice": 4317.7074849039645,
+        "exitPrice": 4101.822110658766,
+        "quantity": 0.289505,
+        "pnl": -63.68739328100242,
+        "pnlPct": -5.095000000000003,
+        "exitReason": "stop_loss",
+        "holdDays": 1
+      },
+      {
+        "entryDate": "2025-08-23",
+        "exitDate": "2025-08-26",
+        "entryPrice": 4829.708464352512,
+        "exitPrice": 4551.058995747743,
+        "quantity": 0.258815,
+        "pnl": -73.29654455092776,
+        "pnlPct": -5.863718890918268,
+        "exitReason": "stop_loss",
+        "holdDays": 3
+      },
+      {
+        "entryDate": "2025-09-13",
+        "exitDate": "2025-09-20",
+        "entryPrice": 4709.31262832441,
+        "exitPrice": 4473.84699690819,
+        "quantity": 0.265432,
+        "pnl": -63.68761563415352,
+        "pnlPct": -5.094999999999995,
+        "exitReason": "stop_loss",
+        "holdDays": 7
+      },
+      {
+        "entryDate": "2025-10-03",
+        "exitDate": "2025-10-11",
+        "entryPrice": 4484.454646534069,
+        "exitPrice": 4260.231914207366,
+        "quantity": 0.278741,
+        "pnl": -63.687569935475715,
+        "pnlPct": -5.094999999999999,
+        "exitReason": "stop_loss",
+        "holdDays": 8
+      },
+      {
+        "entryDate": "2025-12-10",
+        "exitDate": "2025-12-13",
+        "entryPrice": 3322.8014647584096,
+        "exitPrice": 3156.661391520489,
+        "quantity": 0.376189,
+        "pnl": -63.687569303514834,
+        "pnlPct": -5.095000000000006,
+        "exitReason": "stop_loss",
+        "holdDays": 3
+      },
+      {
+        "entryDate": "2026-01-03",
+        "exitDate": "2026-01-21",
+        "entryPrice": 3122.212862521003,
+        "exitPrice": 2966.1022193949525,
+        "quantity": 0.400357,
+        "pnl": -63.68748853626651,
+        "pnlPct": -5.095000000000011,
+        "exitReason": "stop_loss",
+        "holdDays": 18
+      },
+      {
+        "entryDate": "2026-03-05",
+        "exitDate": "2026-03-07",
+        "entryPrice": 2126.0471692601764,
+        "exitPrice": 2019.7448107971675,
+        "quantity": 0.587946,
+        "pnl": -63.68754733142117,
+        "pnlPct": -5.095000000000003,
+        "exitReason": "stop_loss",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2026-03-14",
+        "exitDate": "2026-03-17",
+        "entryPrice": 2093.2156403195886,
+        "exitPrice": 2302.5372043515476,
+        "quantity": 0.597167,
+        "pnl": 123.62493119356189,
+        "pnlPct": 9.89000000000001,
+        "exitReason": "take_profit",
+        "holdDays": 3
+      },
+      {
+        "entryDate": "2026-03-17",
+        "exitDate": "2026-03-19",
+        "entryPrice": 2351.4080468519405,
+        "exitPrice": 2233.8376445093436,
+        "quantity": 0.531596,
+        "pnl": -63.687454760185744,
+        "pnlPct": -5.094999999999996,
+        "exitReason": "stop_loss",
+        "holdDays": 2
+      },
+      {
+        "entryDate": "2026-04-08",
+        "exitDate": "2026-05-18",
+        "entryPrice": 2242.040171906288,
+        "exitPrice": 2129.9381633109733,
+        "quantity": 0.557528,
+        "pnl": -63.687508812443006,
+        "pnlPct": -5.0950000000000095,
+        "exitReason": "stop_loss",
+        "holdDays": 40
+      }
+    ],
+    "roi": {
+      "avgDaily": -0.015737077240998282,
+      "medianDaily": 0,
+      "stdDev": 0.18007006114953572,
+      "profitableDays": 38,
+      "totalDays": 303,
+      "profitablePct": 12.541254125412541,
+      "annualised": -5.638456193751029,
+      "best": {
+        "date": "2026-04-14",
+        "roi": 1.047542695027618,
+        "equity": 9664.395771300975
+      },
+      "worst": {
+        "date": "2026-01-21",
+        "roi": -0.9194231136542882,
+        "equity": 9600.765815079625
+      },
+      "winStreak": 6,
+      "lossStreak": 5,
+      "monthly": [
+        {
+          "month": "2025-08",
+          "roi": -1.381279439241402
+        },
+        {
+          "month": "2025-09",
+          "roi": -0.6585620619353644
+        },
+        {
+          "month": "2025-10",
+          "roi": -0.662927377595002
+        },
+        {
+          "month": "2025-11",
+          "roi": 0
+        },
+        {
+          "month": "2025-12",
+          "roi": -0.6673514263267795
+        },
+        {
+          "month": "2026-01",
+          "roi": -0.6718340742828894
+        },
+        {
+          "month": "2026-02",
+          "roi": 0
+        },
+        {
+          "month": "2026-03",
+          "roi": -0.07811949992156568
+        },
+        {
+          "month": "2026-04",
+          "roi": 0.05332864114708515
+        },
+        {
+          "month": "2026-05",
+          "roi": -0.7443864157793458
+        },
+        {
+          "month": "2026-06",
+          "roi": 0
+        }
+      ]
+    }
+  }
+]
