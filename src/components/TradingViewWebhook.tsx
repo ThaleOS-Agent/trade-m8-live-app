@@ -44,7 +44,7 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
       const r = await fetch(`${BASE_URL}/api/tradingview/status`, {
         headers: { 'User-Agent': 'TradeM8/1.0' }
       });
-      const d = await r.json();
+      const d = await r.json() as any;
       setStatus(d);
     } catch { /* ignore */ }
   }, []);
@@ -56,7 +56,7 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
       const r = await fetch(`${BASE_URL}/api/tradingview/signals?limit=20`, {
         headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'TradeM8/1.0' }
       });
-      const d = await r.json();
+      const d = await r.json() as any;
       setSignals(d.signals ?? []);
     } catch { /* ignore */ }
     setLoading(false);
@@ -83,23 +83,12 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'User-Agent': 'TradeM8/1.0' },
         body: JSON.stringify({ test: true }),
       });
-      const d = await r.json();
+      const d = await r.json() as any;
       setTestResult(d.success ? '✓ Webhook endpoint reachable' : `✗ ${d.error}`);
     } catch (e: any) {
       setTestResult(`✗ ${e.message}`);
     }
   };
-
-  const pineScriptTemplate = `// TradingView Pine Script Alert Message Template
-// Paste this JSON in the "Message" field of your TradingView alert:
-{
-  "action": "{{strategy.order.action}}",
-  "symbol": "{{ticker}}",
-  "exchange": "{{exchange}}",
-  "price": {{close}},
-  "quantity": 0.001,
-  "strategy": "my_strategy"
-}`;
 
   const jsonTemplate = `{
   "action": "buy",

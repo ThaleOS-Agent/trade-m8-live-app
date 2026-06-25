@@ -106,13 +106,6 @@ const BotConfig: React.FC<BotConfigProps> = ({ bot, onClose, onBotCreated }) => 
     { value: 'exness',   label: 'Exness (Forex/MT5)' },
   ];
 
-  // Auto-analyze when strategy changes
-  useEffect(() => {
-    if (formData.symbol === 'AUTO') {
-      analyzeBestAsset();
-    }
-  }, [formData.strategy]);
-
   const analyzeBestAsset = async () => {
     setAnalyzing(true);
     try {
@@ -126,6 +119,13 @@ const BotConfig: React.FC<BotConfigProps> = ({ bot, onClose, onBotCreated }) => 
       setAnalyzing(false);
     }
   };
+
+  // Auto-analyze when strategy changes (declared after analyzeBestAsset to avoid hoisting issue)
+  useEffect(() => {
+    if (formData.symbol === 'AUTO') {
+      analyzeBestAsset();
+    }
+  }, [formData.strategy]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

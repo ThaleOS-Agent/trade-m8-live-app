@@ -1,4 +1,19 @@
-Strategy,AI Enabled,Win Rate,Return %,Sharpe,Max Drawdown,Total Trades,Final Capital
-technical_master,false,73.53,2.44,8.558,0.23,34,10244.32
-technical_master,true,74.36,4.36,12.752,0.29,39,10435.94
-ensemble,true,58.77,2.52,2.493,2.21,114,10252.08
+Label,Asset,Strategy,Trades,Win%,Return%,Sharpe,MaxDD%,AvgDailyROI%,AnnROI%,ProfDays%,FinalCapital
+Gold buy_the_dip,Gold,buy_the_dip,1,0.00,-0.65,-1.995,0.98,-0.0166,-5.92,33.3,9935.06
+Gold trend_following,Gold,trend_following,4,75.00,2.21,1.816,1.01,0.0116,4.32,21.7,10221.38
+Gold momentum,Gold,momentum,4,75.00,3.11,2.934,0.81,0.0160,6.00,20.3,10311.33
+Gold rsi_reversion,Gold,rsi_reversion,0,0.00,0.00,0.000,0.00,0.0000,0.00,0.0,10000.00
+Gold breakout,Gold,breakout,2,50.00,0.57,0.696,0.67,0.0030,1.11,6.3,10057.44
+Gold dual_ma,Gold,dual_ma,0,0.00,0.00,0.000,0.00,0.0000,0.00,0.0,10000.00
+Silver buy_the_dip,Silver,buy_the_dip,3,33.33,0.49,0.504,1.89,0.0107,3.76,46.0,10049.28
+Silver trend_following,Silver,trend_following,2,50.00,0.91,0.735,0.89,0.0048,1.76,6.3,10091.13
+Silver momentum,Silver,momentum,7,57.14,3.39,1.088,2.12,0.0177,6.54,14.1,10338.81
+Oil buy_the_dip,Oil,buy_the_dip,1,0.00,-1.85,-1.183,4.12,-0.0355,-12.52,45.1,9814.84
+Oil trend_following,Oil,trend_following,2,0.00,-2.23,-1.073,2.53,-0.0118,-4.28,4.3,9777.06
+Oil momentum,Oil,momentum,6,50.00,4.21,1.390,1.89,0.0221,8.29,19.6,10420.91
+BTC buy_the_dip,BTC,buy_the_dip,0,0.00,0.00,0.000,0.00,0.0000,0.00,0.0,10000.00
+BTC trend_following,BTC,trend_following,1,0.00,-0.42,-0.822,0.68,-0.0014,-0.51,0.3,9958.49
+BTC momentum,BTC,momentum,6,16.67,-1.11,-0.457,2.89,-0.0036,-1.34,13.6,9888.79
+ETH buy_the_dip,ETH,buy_the_dip,0,0.00,0.00,0.000,0.00,0.0000,0.00,0.0,10000.00
+ETH trend_following,ETH,trend_following,3,0.00,-0.91,-0.750,1.28,-0.0030,-1.10,5.6,9908.98
+ETH momentum,ETH,momentum,10,10.00,-4.72,-1.387,4.72,-0.0157,-5.64,12.5,9528.33

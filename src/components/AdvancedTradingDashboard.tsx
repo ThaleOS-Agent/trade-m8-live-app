@@ -2,7 +2,7 @@
  * Advanced Trading Dashboard with AI Enhancement, Risk Management, and Multi-Exchange Support
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import {
   TrendingUp,
@@ -13,10 +13,8 @@ import {
   DollarSign,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   BarChart3,
   LineChart,
-  PieChart,
   Zap
 } from 'lucide-react';
 
@@ -76,7 +74,7 @@ export function AdvancedTradingDashboard() {
     confidence: 0.70,
     amount: 1000
   });
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [_alerts, _setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     loadStatus();
@@ -448,7 +446,7 @@ function MetricCard({ icon, label, value, subtitle, change, color }: any) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${colorClasses[color]} text-white mb-4`}>
+      <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses]} text-white mb-4`}>
         {icon}
       </div>
       <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
@@ -491,7 +489,7 @@ function StatusCard({ icon, title, status, details, color }: any) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+        <div className={`p-2 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
           {icon}
         </div>
         <div>

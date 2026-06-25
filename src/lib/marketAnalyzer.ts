@@ -1,6 +1,8 @@
 /**
  * Market Analyzer - Multi-Asset Analysis Service
- * Analyzes multiple assets to find the best trading opportunities
+ * Fetches real OHLCV data from CoinGecko via the Trade M8 backend API.
+ * Forex and commodity symbols are not supported by CoinGecko and are excluded
+ * from live analysis (they receive neutral/skipped metrics).
  */
 
 export interface MarketMetrics {
@@ -24,231 +26,250 @@ export interface AssetOpportunity {
   reasons: string[];
 }
 
+// ─── CoinGecko ID mapping ─────────────────────────────────────────────────────
+// Maps trading pair symbols to CoinGecko coin IDs.
+// Symbols not in this map (forex, commodities) are skipped in live analysis.
+
+const SYMBOL_TO_COIN_ID: Record<string, string> = {
+  'BTC/USD': 'bitcoin',
+  'ETH/USD': 'ethereum',
+  'BNB/USD': 'binancecoin',
+  'XRP/USD': 'ripple',
+  'ADA/USD': 'cardano',
+  'SOL/USD': 'solana',
+  'DOT/USD': 'polkadot',
+  'DOGE/USD': 'dogecoin',
+  'AVAX/USD': 'avalanche-2',
+  'MATIC/USD': 'matic-network',
+  'LINK/USD': 'chainlink',
+  'UNI/USD': 'uniswap',
+  'ATOM/USD': 'cosmos',
+  'LTC/USD': 'litecoin',
+  'NEAR/USD': 'near',
+  'APT/USD': 'aptos',
+  'ARB/USD': 'arbitrum',
+  'OP/USD': 'optimism',
+};
+
+// ─── Short-term in-memory cache ───────────────────────────────────────────────
+// Prevents redundant API calls within the same scan cycle.
+
+interface CacheEntry {
+  data: MarketMetrics;
+  expiresAt: number;
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes — matches backend KV TTL
+const metricsCache = new Map<string, CacheEntry>();
+
+function getCached(symbol: string): MarketMetrics | null {
+  const entry = metricsCache.get(symbol);
+  if (entry && Date.now() < entry.expiresAt) return entry.data;
+  metricsCache.delete(symbol);
+  return null;
+}
+
+function setCached(symbol: string, data: MarketMetrics): void {
+  metricsCache.set(symbol, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+// ─── API response shapes ──────────────────────────────────────────────────────
+
+interface BackendSignal {
+  coinId: string;
+  symbol: string;
+  signal: 'buy' | 'sell' | 'hold';
+  strength: number; // 0-100
+  indicators: {
+    rsi: number;
+    trend: 'bullish' | 'bearish' | 'neutral';
+    momentum: number;
+    volatility: number;
+  };
+  currentPrice: number;
+  priceChange24h: number;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Maps a backend TradingSignal to the MarketMetrics shape expected by the rest
+ * of the frontend strategy layer.
+ */
+function signalToMetrics(symbol: string, sig: BackendSignal): MarketMetrics {
+  // Derive a single MACD proxy from trend so evaluateOpportunity() can use it.
+  const macdProxy = sig.indicators.trend === 'bullish' ? 1
+    : sig.indicators.trend === 'bearish' ? -1
+    : 0;
+
+  return {
+    symbol,
+    price: sig.currentPrice,
+    volume: 0, // Volume not returned by /api/trading-signals; not used in scoring
+    volatility: sig.indicators.volatility,
+    trend: sig.indicators.trend,
+    rsi: sig.indicators.rsi,
+    macd: macdProxy,
+    momentum: sig.indicators.momentum,
+    strength: sig.strength,
+  };
+}
+
+/**
+ * Neutral placeholder returned when a symbol cannot be analysed (forex,
+ * commodities, API error). Score of 50 keeps it ranked at the bottom when
+ * real crypto data is present.
+ */
+function neutralMetrics(symbol: string): MarketMetrics {
+  return {
+    symbol,
+    price: 0,
+    volume: 0,
+    volatility: 0,
+    trend: 'neutral',
+    rsi: 50,
+    macd: 0,
+    momentum: 0,
+    strength: 50,
+  };
+}
+
+// ─── MarketAnalyzer ───────────────────────────────────────────────────────────
+
 class MarketAnalyzer {
-  private readonly POPULAR_CRYPTO = [
-    'BTC/USD', 'ETH/USD', 'BNB/USD', 'XRP/USD', 'ADA/USD',
-    'SOL/USD', 'DOT/USD', 'DOGE/USD', 'AVAX/USD', 'MATIC/USD'
-  ];
+  private readonly CRYPTO_SYMBOLS = Object.keys(SYMBOL_TO_COIN_ID);
 
-  private readonly POPULAR_FOREX = [
+  private readonly FOREX_SYMBOLS = [
     'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD',
-    'USD/CHF', 'NZD/USD'
+    'USD/CHF', 'NZD/USD',
   ];
 
-  private readonly POPULAR_COMMODITIES = [
-    'XAU/USD', 'XAG/USD', 'OIL/USD', 'GAS/USD'
+  private readonly COMMODITY_SYMBOLS = [
+    'XAU/USD', 'XAG/USD', 'OIL/USD', 'GAS/USD',
   ];
 
   /**
-   * Calculate RSI (Relative Strength Index)
-   */
-  private calculateRSI(prices: number[], period: number = 14): number {
-    if (prices.length < period + 1) return 50;
-
-    let gains = 0;
-    let losses = 0;
-
-    for (let i = 1; i <= period; i++) {
-      const change = prices[i] - prices[i - 1];
-      if (change > 0) {
-        gains += change;
-      } else {
-        losses += Math.abs(change);
-      }
-    }
-
-    const avgGain = gains / period;
-    const avgLoss = losses / period;
-
-    if (avgLoss === 0) return 100;
-
-    const rs = avgGain / avgLoss;
-    const rsi = 100 - (100 / (1 + rs));
-
-    return rsi;
-  }
-
-  /**
-   * Calculate MACD (Moving Average Convergence Divergence)
-   */
-  private calculateMACD(prices: number[]): number {
-    if (prices.length < 26) return 0;
-
-    const ema12 = this.calculateEMA(prices, 12);
-    const ema26 = this.calculateEMA(prices, 26);
-
-    return ema12 - ema26;
-  }
-
-  /**
-   * Calculate EMA (Exponential Moving Average)
-   */
-  private calculateEMA(prices: number[], period: number): number {
-    if (prices.length === 0) return 0;
-
-    const multiplier = 2 / (period + 1);
-    let ema = prices[0];
-
-    for (let i = 1; i < Math.min(prices.length, period * 2); i++) {
-      ema = (prices[i] - ema) * multiplier + ema;
-    }
-
-    return ema;
-  }
-
-  /**
-   * Calculate volatility (standard deviation of returns)
-   */
-  private calculateVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
-
-    const returns = [];
-    for (let i = 1; i < prices.length; i++) {
-      returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
-    }
-
-    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const squaredDiffs = returns.map(r => Math.pow(r - mean, 2));
-    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / returns.length;
-
-    return Math.sqrt(variance) * 100;
-  }
-
-  /**
-   * Detect trend from price data
-   */
-  private detectTrend(prices: number[]): 'bullish' | 'bearish' | 'neutral' {
-    if (prices.length < 20) return 'neutral';
-
-    const recentPrices = prices.slice(-20);
-    const firstHalf = recentPrices.slice(0, 10);
-    const secondHalf = recentPrices.slice(10);
-
-    const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-
-    const change = ((avgSecond - avgFirst) / avgFirst) * 100;
-
-    if (change > 2) return 'bullish';
-    if (change < -2) return 'bearish';
-    return 'neutral';
-  }
-
-  /**
-   * Calculate momentum
-   */
-  private calculateMomentum(prices: number[], period: number = 10): number {
-    if (prices.length < period) return 0;
-
-    const current = prices[prices.length - 1];
-    const past = prices[prices.length - period];
-
-    return ((current - past) / past) * 100;
-  }
-
-  /**
-   * Generate mock historical prices for simulation
-   */
-  private generateMockPrices(basePrice: number, days: number = 30): number[] {
-    const prices = [basePrice];
-    let currentPrice = basePrice;
-
-    for (let i = 1; i < days; i++) {
-      const change = (Math.random() - 0.5) * (basePrice * 0.02);
-      currentPrice = Math.max(currentPrice + change, basePrice * 0.5);
-      prices.push(currentPrice);
-    }
-
-    return prices;
-  }
-
-  /**
-   * Analyze a single asset
+   * Analyse a single asset.
+   * Returns cached metrics if available; otherwise fetches from the backend.
    */
   async analyzeAsset(symbol: string): Promise<MarketMetrics> {
-    // In production, this would fetch real market data
-    // For now, we'll simulate with realistic data
+    const cached = getCached(symbol);
+    if (cached) return cached;
 
-    const basePrice = Math.random() * 50000 + 1000;
-    const historicalPrices = this.generateMockPrices(basePrice, 30);
-    const currentPrice = historicalPrices[historicalPrices.length - 1];
+    const coinId = SYMBOL_TO_COIN_ID[symbol];
+    if (!coinId) {
+      // Forex / commodity — not supported by CoinGecko endpoint
+      return neutralMetrics(symbol);
+    }
 
-    const rsi = this.calculateRSI(historicalPrices);
-    const macd = this.calculateMACD(historicalPrices);
-    const volatility = this.calculateVolatility(historicalPrices);
-    const trend = this.detectTrend(historicalPrices);
-    const momentum = this.calculateMomentum(historicalPrices);
+    try {
+      const res = await fetch(`/api/market-analysis?coinId=${coinId}&days=14`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    // Calculate overall strength score
-    let strength = 50;
+      const json = await res.json() as any;
+      if (!json.success || !json.analysis) return neutralMetrics(symbol);
 
-    // RSI contribution (oversold = good buy opportunity)
-    if (rsi < 30) strength += 15;
-    else if (rsi > 70) strength -= 15;
-
-    // Trend contribution
-    if (trend === 'bullish') strength += 15;
-    else if (trend === 'bearish') strength -= 15;
-
-    // MACD contribution
-    if (macd > 0) strength += 10;
-    else strength -= 10;
-
-    // Momentum contribution
-    strength += Math.min(Math.max(momentum, -10), 10);
-
-    strength = Math.min(Math.max(strength, 0), 100);
-
-    return {
-      symbol,
-      price: currentPrice,
-      volume: Math.random() * 10000000,
-      volatility,
-      trend,
-      rsi,
-      macd,
-      momentum,
-      strength
-    };
+      const metrics = signalToMetrics(symbol, json.analysis as BackendSignal);
+      setCached(symbol, metrics);
+      return metrics;
+    } catch (err) {
+      console.error(`[marketAnalyzer] analyzeAsset ${symbol}:`, err);
+      return neutralMetrics(symbol);
+    }
   }
 
   /**
-   * Scan multiple assets and rank opportunities
+   * Scan multiple assets in parallel and rank by opportunity score.
+   * Crypto-only symbols are fetched in a single bulk request; forex and
+   * commodities receive neutral metrics without making API calls.
    */
-  async scanMarkets(assetType: 'crypto' | 'forex' | 'commodities' | 'all' = 'all'): Promise<AssetOpportunity[]> {
-    let assetsToScan: string[] = [];
+  async scanMarkets(
+    assetType: 'crypto' | 'forex' | 'commodities' | 'all' = 'all'
+  ): Promise<AssetOpportunity[]> {
+    const symbolsToScan = this.getSymbolsForType(assetType);
 
-    if (assetType === 'all') {
-      assetsToScan = [...this.POPULAR_CRYPTO, ...this.POPULAR_FOREX, ...this.POPULAR_COMMODITIES];
-    } else if (assetType === 'crypto') {
-      assetsToScan = this.POPULAR_CRYPTO;
-    } else if (assetType === 'forex') {
-      assetsToScan = this.POPULAR_FOREX;
-    } else if (assetType === 'commodities') {
-      assetsToScan = this.POPULAR_COMMODITIES;
-    }
+    // Split into crypto (live data) and non-crypto (neutral placeholders)
+    const cryptoSymbols = symbolsToScan.filter(s => SYMBOL_TO_COIN_ID[s]);
+    const otherSymbols = symbolsToScan.filter(s => !SYMBOL_TO_COIN_ID[s]);
 
-    const opportunities: AssetOpportunity[] = [];
+    // Fetch all crypto in one request, with per-symbol cache fallback
+    const cryptoMetrics = await this.fetchBulkCryptoMetrics(cryptoSymbols);
 
-    for (const symbol of assetsToScan) {
-      const metrics = await this.analyzeAsset(symbol);
-      const opportunity = this.evaluateOpportunity(metrics);
-      opportunities.push(opportunity);
-    }
+    // Non-crypto gets neutral metrics without any API call
+    const otherMetrics: MarketMetrics[] = otherSymbols.map(neutralMetrics);
 
-    // Sort by score (best opportunities first)
+    const allMetrics = [...cryptoMetrics, ...otherMetrics];
+    const opportunities = allMetrics.map(m => this.evaluateOpportunity(m));
+
     return opportunities.sort((a, b) => b.score - a.score);
   }
 
   /**
-   * Evaluate trading opportunity based on metrics
+   * Fetch metrics for a list of crypto symbols using the bulk
+   * /api/trading-signals endpoint, falling back to per-symbol calls for
+   * symbols already in the cache.
    */
-  private evaluateOpportunity(metrics: MarketMetrics): AssetOpportunity {
+  private async fetchBulkCryptoMetrics(symbols: string[]): Promise<MarketMetrics[]> {
+    if (symbols.length === 0) return [];
+
+    // Use cached results where available; collect remaining coin IDs to fetch
+    const results = new Map<string, MarketMetrics>();
+    const toFetch: string[] = [];
+
+    for (const sym of symbols) {
+      const cached = getCached(sym);
+      if (cached) {
+        results.set(sym, cached);
+      } else {
+        toFetch.push(sym);
+      }
+    }
+
+    if (toFetch.length > 0) {
+      const coinIds = toFetch
+        .map(s => SYMBOL_TO_COIN_ID[s])
+        .filter(Boolean)
+        .join(',');
+
+      try {
+        const res = await fetch(`/api/trading-signals?coins=${coinIds}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json() as any;
+        if (json.success && json.signals) {
+          for (const sym of toFetch) {
+            const coinId = SYMBOL_TO_COIN_ID[sym];
+            const sig: BackendSignal | undefined = json.signals[coinId];
+            if (sig) {
+              const metrics = signalToMetrics(sym, sig);
+              setCached(sym, metrics);
+              results.set(sym, metrics);
+            } else {
+              results.set(sym, neutralMetrics(sym));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[marketAnalyzer] fetchBulkCryptoMetrics:', err);
+        // Fall back to neutral metrics for anything we couldn't fetch
+        for (const sym of toFetch) {
+          if (!results.has(sym)) results.set(sym, neutralMetrics(sym));
+        }
+      }
+    }
+
+    // Preserve original symbol order
+    return symbols.map(s => results.get(s) ?? neutralMetrics(s));
+  }
+
+  /**
+   * Evaluate trading opportunity based on metrics (unchanged scoring logic).
+   */
+  evaluateOpportunity(metrics: MarketMetrics): AssetOpportunity {
     const reasons: string[] = [];
     let score = metrics.strength;
     let signal: AssetOpportunity['signal'] = 'neutral';
 
-    // RSI Analysis
     if (metrics.rsi < 30) {
       reasons.push(`Oversold (RSI: ${metrics.rsi.toFixed(1)})`);
       score += 10;
@@ -257,7 +278,6 @@ class MarketAnalyzer {
       score -= 10;
     }
 
-    // Trend Analysis
     if (metrics.trend === 'bullish') {
       reasons.push('Strong bullish trend');
       score += 10;
@@ -266,16 +286,14 @@ class MarketAnalyzer {
       score -= 10;
     }
 
-    // MACD Analysis
     if (metrics.macd > 0) {
       reasons.push('Positive MACD signal');
       score += 5;
-    } else {
+    } else if (metrics.macd < 0) {
       reasons.push('Negative MACD signal');
       score -= 5;
     }
 
-    // Momentum Analysis
     if (metrics.momentum > 5) {
       reasons.push(`Strong upward momentum (+${metrics.momentum.toFixed(1)}%)`);
       score += 8;
@@ -284,14 +302,12 @@ class MarketAnalyzer {
       score -= 8;
     }
 
-    // Volatility Analysis
     if (metrics.volatility > 5) {
-      reasons.push('High volatility - higher risk/reward');
-    } else if (metrics.volatility < 1) {
-      reasons.push('Low volatility - stable asset');
+      reasons.push('High volatility — higher risk/reward');
+    } else if (metrics.volatility > 0 && metrics.volatility < 1) {
+      reasons.push('Low volatility — stable asset');
     }
 
-    // Determine signal
     score = Math.min(Math.max(score, 0), 100);
 
     if (score >= 75) signal = 'strong_buy';
@@ -300,45 +316,45 @@ class MarketAnalyzer {
     else if (score >= 25) signal = 'sell';
     else signal = 'strong_sell';
 
-    // Calculate confidence
     const confidence = Math.abs(score - 50) * 2;
 
-    return {
-      symbol: metrics.symbol,
-      score,
-      signal,
-      confidence,
-      metrics,
-      reasons
-    };
+    return { symbol: metrics.symbol, score, signal, confidence, metrics, reasons };
   }
 
   /**
-   * Find the best asset to trade right now
+   * Find the single best asset to trade right now.
    */
   async findBestAsset(
     assetType: 'crypto' | 'forex' | 'commodities' | 'all' = 'all',
-    minScore: number = 60
+    minScore = 60
   ): Promise<AssetOpportunity | null> {
     const opportunities = await this.scanMarkets(assetType);
     const best = opportunities[0];
-
-    if (best && best.score >= minScore) {
-      return best;
-    }
-
-    return null;
+    return best && best.score >= minScore ? best : null;
   }
 
   /**
-   * Get top N trading opportunities
+   * Get top N trading opportunities.
    */
   async getTopOpportunities(
-    count: number = 5,
+    count = 5,
     assetType: 'crypto' | 'forex' | 'commodities' | 'all' = 'all'
   ): Promise<AssetOpportunity[]> {
     const opportunities = await this.scanMarkets(assetType);
     return opportunities.slice(0, count);
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────────────────
+
+  private getSymbolsForType(
+    assetType: 'crypto' | 'forex' | 'commodities' | 'all'
+  ): string[] {
+    switch (assetType) {
+      case 'crypto':      return this.CRYPTO_SYMBOLS;
+      case 'forex':       return this.FOREX_SYMBOLS;
+      case 'commodities': return this.COMMODITY_SYMBOLS;
+      case 'all':         return [...this.CRYPTO_SYMBOLS, ...this.FOREX_SYMBOLS, ...this.COMMODITY_SYMBOLS];
+    }
   }
 }
 

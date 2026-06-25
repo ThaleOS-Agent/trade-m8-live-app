@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, AuthState } from '../types';
 import api from './api';
 
@@ -12,42 +12,20 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
-
-  useEffect(() => {
-    // Check for existing session on mount
+  const [authState, setAuthState] = useState<AuthState>(() => {
     const token = localStorage.getItem('auth_token');
     const userStr = localStorage.getItem('user');
-
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        setAuthState({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
+        return { user, token, isAuthenticated: true, isLoading: false };
+      } catch {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user');
-        setAuthState({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
       }
-    } else {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
-  }, []);
+    return { user: null, token: null, isAuthenticated: false, isLoading: false };
+  });
 
   const login = async (email: string, password: string) => {
     try {

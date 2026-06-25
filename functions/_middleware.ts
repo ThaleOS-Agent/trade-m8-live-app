@@ -3,7 +3,7 @@
  * Handles all API requests and trading logic
  */
 
-import { CoinGeckoService, symbolToCoinId } from './lib/coingecko-service';
+import { CoinGeckoService } from './lib/coingecko-service';
 
 // Environment interface
 interface Env {
@@ -94,7 +94,6 @@ export async function onRequest(context: any): Promise<Response> {
  * Handle API requests
  */
 async function handleApiRequest(request: Request, env: Env, path: string): Promise<Response> {
-  const method = request.method;
   const segments = path.split('/').filter(Boolean);
   const endpoint = segments[1]; // After '/api/'
 
@@ -115,19 +114,19 @@ async function handleApiRequest(request: Request, env: Env, path: string): Promi
       return handleAuth(request, env);
     
     case 'bots':
-      return handleBots(request, env, auth.userId);
-    
+      return handleBots(request, env, auth.userId!);
+
     case 'trades':
-      return handleTrades(request, env, auth.userId);
-    
+      return handleTrades(request, env, auth.userId!);
+
     case 'portfolio':
-      return handlePortfolio(request, env, auth.userId);
-    
+      return handlePortfolio(request, env, auth.userId!);
+
     case 'market':
       return handleMarketData(request, env);
-    
+
     case 'analytics':
-      return handleAnalytics(request, env, auth.userId);
+      return handleAnalytics(request, env, auth.userId!);
 
     case 'market-analysis':
       return handleMarketAnalysis(request, env);
@@ -151,7 +150,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
   const action = url.pathname.split('/').pop();
 
   if (action === 'login' && request.method === 'POST') {
-    const { email, password } = await request.json();
+    const { email, password } = await request.json() as any;
 
     if (!email || !password) {
       return jsonResponse({ error: 'Email and password required' }, {}, 400);
@@ -192,7 +191,7 @@ async function handleAuth(request: Request, env: Env): Promise<Response> {
   }
 
   if (action === 'register' && request.method === 'POST') {
-    const { email, password, fullName } = await request.json();
+    const { email, password, fullName } = await request.json() as any;
 
     if (!email || !password || !fullName) {
       return jsonResponse({ error: 'Email, password and name required' }, {}, 400);
@@ -366,21 +365,38 @@ async function handleTrades(request: Request, env: Env, userId: string): Promise
 /**
  * Portfolio handler
  */
-async function handlePortfolio(request: Request, env: Env, userId: string): Promise<Response> {
-  // Get latest portfolio snapshot
-  const portfolio = await env.DB.prepare(
-    'SELECT * FROM portfolio_snapshots WHERE user_id = ? ORDER BY created_at DESC LIMIT 1'
-  ).bind(userId).first();
+async function handlePortfolio(_request: Request, env: Env, userId: string): Promise<Response> {
+  // Alias columns to match frontend expectations (daily_pnl → daily_change, etc.)
+  const portfolio = await env.DB.prepare(`
+    SELECT
+      total_value,
+      cash_balance,
+      positions_value,
+      daily_pnl        AS daily_change,
+      daily_pnl_percent AS daily_change_percent,
+      total_pnl        AS realized_pnl,
+      total_pnl_percent,
+      max_drawdown,
+      sharpe_ratio,
+      win_rate,
+      snapshot_type,
+      created_at
+    FROM portfolio_snapshots
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).bind(userId).first();
 
-  // Get active trades
+  // Active open + paper trades
   const activeTrades = await env.DB.prepare(
-    'SELECT COUNT(*) as count, SUM(pnl) as total_pnl FROM trades WHERE user_id = ? AND status = ?'
-  ).bind(userId, 'open').first();
+    `SELECT COUNT(*) as count, SUM(pnl) as total_pnl
+     FROM trades WHERE user_id = ? AND status IN ('open','paper')`
+  ).bind(userId).first();
 
   return jsonResponse({
     portfolio,
-    activeTrades: activeTrades.count,
-    unrealizedPnL: activeTrades.total_pnl || 0
+    activeTrades: (activeTrades as any)?.count ?? 0,
+    unrealizedPnL: (activeTrades as any)?.total_pnl ?? 0
   });
 }
 
@@ -389,11 +405,15 @@ async function handlePortfolio(request: Request, env: Env, userId: string): Prom
  */
 async function handleMarketData(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const symbols = url.searchParams.get('symbols')?.split(',') || [];
-  
+  const symbols = (url.searchParams.get('symbols') || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  if (symbols.length === 0) {
+    return jsonResponse({ marketData: [] });
+  }
+
   // Get cached market data
   const marketData = await env.DB.prepare(
-    `SELECT * FROM market_data WHERE symbol IN (${symbols.map(() => '?').join(',')}) 
+    `SELECT * FROM market_data WHERE symbol IN (${symbols.map(() => '?').join(',')})
      AND updated_at > strftime('%s', 'now', '-5 minutes')`
   ).bind(...symbols).all();
 
@@ -403,7 +423,7 @@ async function handleMarketData(request: Request, env: Env): Promise<Response> {
 /**
  * Analytics handler
  */
-async function handleAnalytics(request: Request, env: Env, userId: string): Promise<Response> {
+async function handleAnalytics(_request: Request, env: Env, userId: string): Promise<Response> {
   // Get performance metrics
   const metrics = await env.DB.prepare(
     'SELECT * FROM performance_metrics WHERE user_id = ? ORDER BY created_at DESC LIMIT 100'
@@ -537,7 +557,7 @@ async function handleTradingSignals(request: Request, env: Env): Promise<Respons
 /**
  * Trading opportunities handler - Find best opportunities
  */
-async function handleTradingOpportunities(request: Request, env: Env): Promise<Response> {
+async function handleTradingOpportunities(_request: Request, env: Env): Promise<Response> {
   try {
     // Check cache first
     const cached = await env.CACHE.get('trading-opportunities');
@@ -587,58 +607,13 @@ async function authenticate(request: Request, env: Env): Promise<{ valid: boolea
 
   try {
     const payload = await verifyJWT(token, env.JWT_SECRET);
+    // Confirm session still exists in KV (catches post-logout token reuse)
+    const stored = await env.SESSIONS.get(`session:${payload.userId}`);
+    if (!stored) return { valid: false };
     return { valid: true, userId: payload.userId };
   } catch {
     return { valid: false };
   }
-}
-
-/**
- * Update market data (scheduled task)
- */
-async function updateMarketData(env: Env): Promise<void> {
-  console.log('Updating market data...');
-  
-  // Fetch from CoinGecko
-  const symbols = ['bitcoin', 'ethereum', 'cardano'];
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${symbols.join(',')}&vs_currencies=usd&include_24hr_change=true`;
-  
-  const response = await fetch(url, {
-    headers: { 'X-Cg-Pro-Api-Key': env.COINGECKO_API_KEY }
-  });
-  
-  const data = await response.json();
-  
-  // Update database
-  for (const [symbol, info] of Object.entries(data)) {
-    await env.DB.prepare(
-      'INSERT OR REPLACE INTO market_data (id, symbol, exchange, price, change_24h, updated_at) VALUES (?, ?, ?, ?, ?, strftime(\'%s\', \'now\'))'
-    ).bind(
-      `${symbol}-coingecko`,
-      symbol.toUpperCase(),
-      'coingecko',
-      info.usd,
-      info.usd_24h_change
-    ).run();
-  }
-  
-  console.log('Market data updated');
-}
-
-/**
- * Check trading bots (scheduled task)
- */
-async function checkTradingBots(env: Env): Promise<void> {
-  console.log('Checking trading bots...');
-  
-  const bots = await env.DB.prepare(
-    'SELECT * FROM trading_bots WHERE status = ?'
-  ).bind('running').all();
-  
-  console.log(`Found ${bots.results.length} running bots`);
-  
-  // Process each bot (would execute trading logic here)
-  // For now, just log
 }
 
 /**
@@ -816,8 +791,7 @@ async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   if (!stored) return false;
-  // Legacy plain-text or placeholder (first-time migration)
-  if (!stored.startsWith('pbkdf2:')) return true; // allow access, hash updated on next login
+  if (!stored.startsWith('pbkdf2:')) return false; // reject unknown/legacy hash formats
   const [, saltHex, hashHex] = stored.split(':');
   const enc = new TextEncoder();
   const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
@@ -866,6 +840,6 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
   const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(signingInput));
   if (!valid) throw new Error('Invalid token signature');
   const payload = JSON.parse(b64urlDecode(body));
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
+  if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) throw new Error('Token expired');
   return payload;
 }

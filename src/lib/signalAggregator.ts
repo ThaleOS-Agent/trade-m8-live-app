@@ -4,8 +4,8 @@
  * to generate comprehensive trading signals
  */
 
-import { marketAnalyzer, AssetOpportunity } from './marketAnalyzer';
-import { newsSentiment, SentimentAnalysis } from './newsSentiment';
+import { marketAnalyzer } from './marketAnalyzer';
+import { newsSentiment } from './newsSentiment';
 
 export interface TradingSignal {
   symbol: string;
@@ -114,16 +114,17 @@ class SignalAggregator {
     assetType: 'crypto' | 'forex' | 'commodities' | 'all' = 'all',
     minScore: number = 60
   ): Promise<TradingSignal[]> {
-    // Get top opportunities from market analyzer
+    // Fix #9: fetch all opportunities first, then generate signals in parallel
     const opportunities = await marketAnalyzer.scanMarkets(assetType);
 
-    // Generate signals for top assets
-    const signals: TradingSignal[] = [];
+    const settled = await Promise.allSettled(
+      opportunities.slice(0, 10).map(opp => this.generateSignal(opp.symbol))
+    );
 
-    for (const opp of opportunities.slice(0, 10)) {
-      const signal = await this.generateSignal(opp.symbol);
-      if (signal.score >= minScore) {
-        signals.push(signal);
+    const signals: TradingSignal[] = [];
+    for (const result of settled) {
+      if (result.status === 'fulfilled' && result.value.score >= minScore) {
+        signals.push(result.value);
       }
     }
 
@@ -202,10 +203,11 @@ class SignalAggregator {
   async getSignalsFor(symbols: string[]): Promise<Map<string, TradingSignal>> {
     const signalMap = new Map<string, TradingSignal>();
 
-    for (const symbol of symbols) {
-      const signal = await this.generateSignal(symbol);
-      signalMap.set(symbol, signal);
-    }
+    // Fix #9: parallel fetch
+    const results = await Promise.allSettled(symbols.map(s => this.generateSignal(s)));
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') signalMap.set(symbols[i], result.value);
+    });
 
     return signalMap;
   }

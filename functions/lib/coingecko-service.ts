@@ -86,9 +86,9 @@ export class CoinGeckoService {
         throw new Error(`CoinGecko API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as number[][];
 
-      return data.map((candle: number[]) => ({
+      return data.map((candle) => ({
         timestamp: candle[0],
         open: candle[1],
         high: candle[2],
@@ -340,7 +340,7 @@ export class CoinGeckoService {
       const [gainersLosers, trending] = await Promise.all([
         this.getTopGainersLosers(),
         this.getTrendingCoins()
-      ]);
+      ]) as [any, any];
 
       // Map top gainers (high momentum opportunities)
       const highMomentum: TradingOpportunity[] = (gainersLosers.top_gainers || [])

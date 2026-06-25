@@ -1,10 +1,8 @@
-name: Deploy to Cloudflare Pages
+name: Deploy — Cloudflare Pages + Worker
 
+# Only deploy on push to main — NOT on PRs (prevents accidental production deploys)
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -14,7 +12,8 @@ jobs:
     permissions:
       contents: read
       deployments: write
-    name: Deploy to Cloudflare Pages
+    name: Build, Deploy Pages + Worker, Health Check
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,22 +27,72 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build project
+      - name: Build frontend (Vite)
         run: npm run build
 
-      - name: Publish to Cloudflare Pages
+      # ── Credential gate ──────────────────────────────────────────────────────
+      - name: Check Cloudflare credentials
+        id: check-credentials
+        run: |
+          TOKEN_TRIMMED="${CLOUDFLARE_API_TOKEN//[[:space:]]/}"
+          ACCOUNT_ID_TRIMMED="${CLOUDFLARE_ACCOUNT_ID//[[:space:]]/}"
+          if [[ -n "$TOKEN_TRIMMED" && -n "$ACCOUNT_ID_TRIMMED" ]]; then
+            echo "available=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID not set — skipping deploy"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # ── Deploy Pages (frontend + Functions) ──────────────────────────────────
+      - name: Deploy to Cloudflare Pages
+        if: steps.check-credentials.outputs.available == 'true'
         uses: cloudflare/pages-action@v1
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: trade-m8-production
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          apiToken:      ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId:     ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName:   trade-m8-production
+          directory:     dist
+          gitHubToken:   ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
 
-      - name: Health Check
-        if: github.ref == 'refs/heads/main'
+      # ── Deploy Worker (cron scheduler) ───────────────────────────────────────
+      - name: Deploy Scheduled Worker
+        if: steps.check-credentials.outputs.available == 'true'
+        run: npx wrangler deploy --config wrangler.worker.toml
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # ── Health checks ────────────────────────────────────────────────────────
+      - name: Wait for propagation
+        if: steps.check-credentials.outputs.available == 'true'
+        run: sleep 25
+
+      - name: Health check — Pages API
+        if: steps.check-credentials.outputs.available == 'true'
         run: |
-          echo "Waiting for deployment to propagate..."
-          sleep 30
-          curl -f https://trade-m8.app/api/health || echo "Health check failed, but deployment may still be propagating"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://trade-m8.app/api/health)
+          echo "Pages /api/health → HTTP $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Pages health check failed (HTTP $STATUS)"
+            exit 1
+          fi
+
+      - name: Health check — Worker
+        if: steps.check-credentials.outputs.available == 'true'
+        continue-on-error: true   # Worker URL may not be publicly exposed
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://trade-m8-worker.thaleosnetwork.workers.dev/health)
+          echo "Worker /health → HTTP $STATUS"
+
+      - name: Health check — Executor (Python)
+        if: steps.check-credentials.outputs.available == 'true'
+        continue-on-error: true   # Executor health is informational — not a deploy blocker
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://trade-m8.app/api/executor/health)
+          echo "Executor health → HTTP $STATUS"
+          BODY=$(curl -s https://trade-m8.app/api/executor/health)
+          echo "Executor response: $BODY"

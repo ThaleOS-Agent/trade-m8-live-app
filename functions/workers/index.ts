@@ -15,6 +15,146 @@ import { createExchangeManager } from '../lib/sdk-exchange-connector';
 import { createAlgoEngine, AlgoConfig, AlgoTradeResult } from '../lib/algo-trading-engine';
 
 // ============================================================================
+// PYTHON EXECUTOR CLIENT
+// Calls the FastAPI executor on AWS Tokyo for order placement and risk checks.
+// Falls back gracefully to the TS algo engine if EXECUTOR_URL is not set.
+// ============================================================================
+
+interface ExecutorRiskResponse {
+  approved:      boolean;
+  units:         number;
+  sl:            number;
+  tp:            number;
+  atr:           number;
+  risk_amount:   number;
+  reject_reason: string | null;
+  paper_mode:    boolean;
+}
+
+interface ExecutorOrderResponse {
+  success:    boolean;
+  order_id:   string;
+  symbol:     string;
+  side:       string;
+  filled_qty: number;
+  fill_price: number;
+  fee:        number;
+  order_type: string;
+  exchange:   string;
+  paper_mode: boolean;
+  error:      string;
+  timestamp:  string;
+}
+
+interface ExecutorCloseResponse {
+  success:    boolean;
+  net_pnl:    number;
+  order_id:   string;
+  paper_mode: boolean;
+  error:      string;
+}
+
+async function executorFetch<T>(
+  env:      Env,
+  path:     string,
+  method:   string = 'GET',
+  body?:    unknown,
+): Promise<T | null> {
+  if (!env.EXECUTOR_URL || !env.EXECUTOR_SECRET) {
+    console.warn('[executor] EXECUTOR_URL or EXECUTOR_SECRET not set — skipping Python executor call');
+    return null;
+  }
+
+  const url = `${env.EXECUTOR_URL.replace(/\/$/, '')}${path}`;
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${env.EXECUTOR_SECRET}`,
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(8000),   // 8s timeout — executor must be fast
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.error(`[executor] ${method} ${path} → ${res.status}: ${text.substring(0, 200)}`);
+      return null;
+    }
+
+    return (await res.json()) as T;
+  } catch (err: any) {
+    console.error(`[executor] ${method} ${path} failed: ${err?.message ?? err}`);
+    return null;
+  }
+}
+
+/** Check if the Python executor is reachable and healthy. */
+async function executorHealthy(env: Env): Promise<boolean> {
+  const result = await executorFetch<{ status: string }>(env, '/health');
+  return result?.status === 'ok';
+}
+
+/** Evaluate risk and get position size from the Python executor. */
+async function executorRiskEvaluate(
+  env:         Env,
+  entryPrice:  number,
+  highArr:     number[],
+  lowArr:      number[],
+  closeArr:    number[],
+  side:        'LONG' | 'SHORT' = 'LONG',
+  confidence:  number = 1.0,
+): Promise<ExecutorRiskResponse | null> {
+  return executorFetch<ExecutorRiskResponse>(env, '/risk/evaluate', 'POST', {
+    entry_price: entryPrice,
+    high_arr:    highArr,
+    low_arr:     lowArr,
+    close_arr:   closeArr,
+    side,
+    confidence,
+  });
+}
+
+/** Place an order via the Python executor. */
+async function executorExecute(
+  env:        Env,
+  symbol:     string,
+  action:     'BUY' | 'SELL',
+  units:      number,
+  entryPrice: number,
+  exchange:   string = '',
+): Promise<ExecutorOrderResponse | null> {
+  return executorFetch<ExecutorOrderResponse>(env, '/execute', 'POST', {
+    symbol,
+    action,
+    units,
+    entry_price: entryPrice,
+    exchange,
+  });
+}
+
+/** Close an open position via the Python executor and update P&L. */
+async function executorClose(
+  env:        Env,
+  symbol:     string,
+  side:       string,
+  units:      number,
+  entryPrice: number,
+  exitPrice:  number,
+  exchange:   string = '',
+): Promise<ExecutorCloseResponse | null> {
+  return executorFetch<ExecutorCloseResponse>(env, '/execute/close', 'POST', {
+    symbol,
+    side,
+    units,
+    entry_price: entryPrice,
+    exit_price:  exitPrice,
+    exchange,
+  });
+}
+
+// ============================================================================
 // ENVIRONMENT INTERFACE
 // ============================================================================
 export interface Env {
@@ -63,6 +203,14 @@ export interface Env {
   EXNESS_ACCOUNT_LOGIN: string;
   ALPHA_VANTAGE_API_KEY: string;
   FINNHUB_API_KEY: string;
+  // ── Python Executor (AWS Tokyo) ─────────────────────────────────────────────
+  // Set via: wrangler pages secret put EXECUTOR_URL
+  //          wrangler pages secret put EXECUTOR_SECRET
+  // EXECUTOR_URL example: https://executor.trade-m8.internal:8000
+  // PAPER_MODE:  "true" (default) | "false" — mirrors executor env
+  EXECUTOR_URL:    string;  // base URL of the FastAPI executor on AWS Tokyo
+  EXECUTOR_SECRET: string;  // shared secret — must match executor EXECUTOR_SECRET env
+  PAPER_MODE:      string;  // "true" | "false"
 }
 
 // ============================================================================
@@ -103,6 +251,17 @@ export default {
 
     if (url.pathname === '/health') {
       return json({ status: 'healthy', worker: 'trade-m8-worker', timestamp: new Date().toISOString() }, cors);
+    }
+
+    // Executor health probe — confirms Python service is reachable from this Worker
+    if (url.pathname === '/executor/health') {
+      const healthy = await executorHealthy(_env);
+      return json({
+        executor_reachable: healthy,
+        executor_url:       _env.EXECUTOR_URL ? 'configured' : 'not-configured',
+        paper_mode:         _env.PAPER_MODE !== 'false',
+        timestamp:          new Date().toISOString(),
+      }, cors);
     }
 
     return json({ error: 'Not found' }, cors, 404);
@@ -292,8 +451,11 @@ async function updateMarketData(env: Env): Promise<void> {
 // ============================================================================
 async function runScheduledBots(env: Env): Promise<void> {
   try {
-    // Ensure new bot columns exist (idempotent ALTER TABLE, errors suppressed)
-    await ensureBotColumns(env);
+    // Ensure new bot columns exist — guarded by KV flag so DDL only runs once
+    if (!await env.CACHE.get('worker:columns-migrated')) {
+      await ensureBotColumns(env);
+      await env.CACHE.put('worker:columns-migrated', '1', { expirationTtl: 86400 * 30 });
+    }
 
     // Fetch all bots with status = 'running'
     const result = await env.DB.prepare(
@@ -373,66 +535,158 @@ async function runScheduledBots(env: Env): Promise<void> {
 
 // ============================================================================
 // SINGLE BOT CYCLE
+// Routing priority:
+//   1. Python executor on AWS Tokyo (if EXECUTOR_URL is set and healthy)
+//   2. TypeScript algo engine fallback (if executor is unavailable)
+//
+// The Python executor provides:
+//   - True Range ATR (not just H-L)
+//   - Correct Wilder RSI smoothing
+//   - Daily loss gate and trade count gate
+//   - PAPER_MODE gate (no live orders until PAPER_MODE=false on executor)
+//   - Binance TWAP for large orders, OANDA for forex/gold
 // ============================================================================
 async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchangeManager>, env: Env): Promise<void> {
   const tag = `[bot-cron:${bot.name}]`;
 
   try {
-    // Parse stored config JSON (set when bot is created/updated)
     const storedConfig = bot.config ? JSON.parse(bot.config) : {};
 
-    // Build AlgoConfig — stored config overrides defaults
     const algoConfig: AlgoConfig = {
-      exchange: bot.exchange,
-      symbol: bot.symbol || 'BTC/USDT',
-      strategy: (bot.strategy as AlgoConfig['strategy']) || 'momentum',
-      timeframe: storedConfig.timeframe || '15m',
-      capitalUSDT: storedConfig.capitalUSDT || Math.max(bot.position_size * 10000, 50),
+      exchange:      bot.exchange,
+      symbol:        bot.symbol || 'BTC/USDT',
+      strategy:      (bot.strategy as AlgoConfig['strategy']) || 'momentum',
+      timeframe:     storedConfig.timeframe     || '15m',
+      capitalUSDT:   storedConfig.capitalUSDT   || Math.max(bot.position_size * 10000, 50),
       maxOpenTrades: storedConfig.maxOpenTrades || 1,
-      stopLossPct: storedConfig.stopLossPct || 0.02,
+      stopLossPct:   storedConfig.stopLossPct   || 0.02,
       takeProfitPct: storedConfig.takeProfitPct || 0.04,
-      // Default to paper mode unless explicitly set to false in stored config
-      paperMode: storedConfig.paperMode !== false,
-      params: storedConfig.params,
+      paperMode:     storedConfig.paperMode !== false,  // default: paper
+      params:        storedConfig.params,
     };
 
-    console.log(`${tag} Running ${algoConfig.strategy} on ${algoConfig.symbol} [${algoConfig.timeframe}] paper=${algoConfig.paperMode}`);
+    const VALID_STRATEGIES = new Set([
+      'momentum','rsi_reversion','macd_crossover','breakout',
+      'scalping','dual_ma','buy_the_dip','trend_following',
+    ]);
+    if (!VALID_STRATEGIES.has(bot.strategy)) {
+      const msg = `Unknown strategy '${bot.strategy}' — update the bot config`;
+      console.error(`${tag} ${msg}`);
+      await env.DB.prepare(
+        `UPDATE trading_bots SET last_error = ?, updated_at = datetime('now') WHERE id = ?`
+      ).bind(msg, bot.id).run().catch(() => {});
+      return;
+    }
 
-    const engine = createAlgoEngine(manager, algoConfig);
+    // Skip if an open trade already exists for this bot+symbol
+    const existingTrade = await env.DB.prepare(
+      `SELECT id FROM trades WHERE bot_id = ? AND symbol = ? AND status IN ('open','paper') LIMIT 1`
+    ).bind(bot.id, bot.symbol).first();
+
+    if (existingTrade) {
+      console.log(`${tag} Skipping — open trade already exists for ${bot.symbol}`);
+      return;
+    }
+
+    // ── Run signal generation (TypeScript algo engine) ──────────────────────
+    // Signal generation always runs in TS — it's fast and needs no Python.
+    // Only risk sizing and order placement route to the Python executor.
+    const engine = createAlgoEngine(manager, algoConfig, env.CACHE);
     const result: AlgoTradeResult = await engine.runCycle(algoConfig);
 
-    // Always update last_run_at and last_signal
+    // Update last_run_at and last_signal regardless of outcome
     await env.DB.prepare(
       `UPDATE trading_bots
        SET last_run_at = datetime('now'), last_signal = ?, last_error = NULL, updated_at = datetime('now')
        WHERE id = ?`
     ).bind(result.signal, bot.id).run();
 
-    if (result.signal === 'hold' || result.confidence < 0.55) {
+    if (result.signal === 'hold') {
       console.log(`${tag} HOLD — ${result.reason} (conf=${result.confidence.toFixed(2)})`);
       return;
     }
 
-    // Signal is buy or sell — record the trade
+    // ── Risk evaluation ──────────────────────────────────────────────────────
+    // Prefer Python executor (True Range ATR, Wilder RSI, daily gates).
+    // Fall back to TS engine's own SL/TP if executor unreachable.
+    const action = result.signal === 'buy' ? 'BUY' : 'SELL';
+    const entryPrice = result.orderResult?.price ?? result.indicators?.lastPrice ?? 0;
+
+    let units   = result.orderResult?.amount ?? (algoConfig.capitalUSDT / Math.max(entryPrice, 1));
+    let sl      = result.stopLossPrice  ?? entryPrice * (1 - algoConfig.stopLossPct);
+    let tp      = result.takeProfitPrice ?? entryPrice * (1 + algoConfig.takeProfitPct);
+    let useExecutor = false;
+
+    if (env.EXECUTOR_URL && env.EXECUTOR_SECRET) {
+      // Fetch recent OHLCV from KV cache (populated by the market-data cron)
+      const cached = await env.CACHE.get(`ohlcv:${bot.symbol}:${algoConfig.timeframe}`);
+      if (cached) {
+        try {
+          const candles: { high: number; low: number; close: number }[] = JSON.parse(cached);
+          const highArr  = candles.map(c => c.high);
+          const lowArr   = candles.map(c => c.low);
+          const closeArr = candles.map(c => c.close);
+
+          const riskResp = await executorRiskEvaluate(
+            env, entryPrice, highArr, lowArr, closeArr,
+            action === 'BUY' ? 'LONG' : 'SHORT',
+            result.confidence,
+          );
+
+          if (riskResp) {
+            if (!riskResp.approved) {
+              console.log(`${tag} Executor rejected: ${riskResp.reject_reason}`);
+              await env.DB.prepare(
+                `UPDATE trading_bots SET last_error = ?, updated_at = datetime('now') WHERE id = ?`
+              ).bind(`Risk rejected: ${riskResp.reject_reason}`, bot.id).run().catch(() => {});
+              return;
+            }
+            units = riskResp.units;
+            sl    = riskResp.sl;
+            tp    = riskResp.tp;
+            useExecutor = true;
+            console.log(`${tag} Executor risk approved: units=${units.toFixed(4)} sl=${sl.toFixed(4)} tp=${tp.toFixed(4)} ATR=${riskResp.atr.toFixed(4)}`);
+          }
+        } catch (parseErr) {
+          console.warn(`${tag} Could not parse OHLCV cache — using TS risk sizing`);
+        }
+      } else {
+        console.warn(`${tag} No OHLCV cache for ${bot.symbol}:${algoConfig.timeframe} — using TS risk sizing`);
+      }
+    }
+
+    // ── Order placement ──────────────────────────────────────────────────────
+    // Prefer Python executor (handles PAPER_MODE gate, TWAP routing, OANDA).
+    // Fall back to TS engine result if executor unreachable.
+    let orderId    = result.orderResult?.orderId    ?? crypto.randomUUID();
+    let fillPrice  = result.orderResult?.price      ?? entryPrice;
+    let tradeType  = result.orderResult?.type       ?? (algoConfig.paperMode ? 'paper' : 'market');
+    let tradeStatus = algoConfig.paperMode ? 'paper' : 'open';
+    let executorUsed = false;
+
+    if (useExecutor && env.EXECUTOR_URL && env.EXECUTOR_SECRET) {
+      const orderResp = await executorExecute(
+        env, bot.symbol, action, units, entryPrice, bot.exchange,
+      );
+      if (orderResp) {
+        if (!orderResp.success) {
+          const errMsg = `Order failed: ${orderResp.error}`;
+          console.error(`${tag} ${errMsg}`);
+          await env.DB.prepare(
+            `UPDATE trading_bots SET last_error = ?, updated_at = datetime('now') WHERE id = ?`
+          ).bind(errMsg, bot.id).run().catch(() => {});
+          return;
+        }
+        orderId      = orderResp.order_id;
+        fillPrice    = orderResp.fill_price || entryPrice;
+        tradeType    = orderResp.order_type || tradeType;
+        tradeStatus  = orderResp.paper_mode ? 'paper' : 'open';
+        executorUsed = true;
+      }
+    }
+
+    // ── Persist trade to D1 ──────────────────────────────────────────────────
     const tradeId = crypto.randomUUID();
-    const entryPrice = result.orderResult?.price ?? 0;
-    const quantity = result.orderResult?.amount ?? (algoConfig.capitalUSDT / Math.max(entryPrice, 1));
-
-    const stopLossPrice = entryPrice > 0
-      ? (result.signal === 'buy'
-        ? entryPrice * (1 - algoConfig.stopLossPct)
-        : entryPrice * (1 + algoConfig.stopLossPct))
-      : null;
-
-    const takeProfitPrice = entryPrice > 0
-      ? (result.signal === 'buy'
-        ? entryPrice * (1 + algoConfig.takeProfitPct)
-        : entryPrice * (1 - algoConfig.takeProfitPct))
-      : null;
-
-    const tradeType = algoConfig.paperMode ? 'paper' : 'market';
-    const tradeStatus = algoConfig.paperMode ? 'paper' : 'open';
-
     await env.DB.prepare(
       `INSERT INTO trades
          (id, user_id, bot_id, exchange, symbol, side, type,
@@ -445,30 +699,30 @@ async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchang
       bot.id,
       bot.exchange,
       bot.symbol,
-      result.signal,
+      result.signal,            // 'buy' | 'sell'
       tradeType,
-      quantity,
-      entryPrice,
-      stopLossPrice,
-      takeProfitPrice,
+      units,
+      fillPrice,
+      sl,
+      tp,
       bot.strategy,
       result.confidence,
       result.reason,
       tradeStatus,
     ).run();
 
-    const modeLabel = algoConfig.paperMode ? '[PAPER]' : '[LIVE]';
+    const modeLabel     = tradeStatus === 'paper' ? '[PAPER]' : '[LIVE]';
+    const executorLabel = executorUsed ? '[PY-EXEC]' : '[TS-EXEC]';
     console.log(
-      `${tag} ${modeLabel} ${result.signal.toUpperCase()} ${bot.symbol} ` +
-      `qty=${quantity.toFixed(6)} @ ${entryPrice} ` +
-      `SL=${stopLossPrice?.toFixed(4)} TP=${takeProfitPrice?.toFixed(4)} ` +
+      `${tag} ${modeLabel} ${executorLabel} ${action} ${bot.symbol} ` +
+      `qty=${units.toFixed(6)} @ ${fillPrice} ` +
+      `SL=${sl.toFixed(4)} TP=${tp.toFixed(4)} ` +
       `conf=${result.confidence.toFixed(2)}`
     );
 
   } catch (cycleErr: any) {
     const errMsg = (cycleErr?.message || String(cycleErr)).substring(0, 500);
     console.error(`${tag} Cycle failed: ${errMsg}`);
-    // Persist error without crashing the other bots
     await env.DB.prepare(
       `UPDATE trading_bots
        SET last_run_at = datetime('now'), last_error = ?, updated_at = datetime('now')

@@ -139,6 +139,28 @@ export const STRATEGIES: Record<string, StrategyConfig> = {
     useNewsAnalysis: true,
     useTechnicalAnalysis: true,
     autoSelectAsset: true
+  },
+
+  buy_the_dip: {
+    name: '🐂 Buy the Dip (Bull Market)',
+    description: 'Enters on RSI pullbacks (35–52) only when price is above EMA-200 confirming a secular uptrend. Designed for Gold, Silver, and trending crypto.',
+    riskLevel: 'medium',
+    minConfidence: 72,
+    assetTypes: ['crypto', 'commodities'],
+    useNewsAnalysis: false,
+    useTechnicalAnalysis: true,
+    autoSelectAsset: false
+  },
+
+  trend_following: {
+    name: '📈 Trend Following (Bull Market)',
+    description: 'Re-enters on every EMA-9/21/50 pullback during an aligned bull trend. Generates repeat signals throughout a bull phase — not just on the first crossover.',
+    riskLevel: 'medium',
+    minConfidence: 72,
+    assetTypes: ['all'],
+    useNewsAnalysis: false,
+    useTechnicalAnalysis: true,
+    autoSelectAsset: false
   }
 };
 

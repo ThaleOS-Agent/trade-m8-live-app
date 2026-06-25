@@ -121,6 +121,15 @@ class ApiService {
     const { data } = await this.client.get('/api/health');
     return data;
   }
+
+  // Generic methods for components that need arbitrary endpoints
+  async get(path: string) {
+    return this.client.get(path);
+  }
+
+  async post(path: string, body?: unknown) {
+    return this.client.post(path, body);
+  }
 }
 
 export const api = new ApiService();
