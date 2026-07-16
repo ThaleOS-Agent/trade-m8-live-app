@@ -500,8 +500,14 @@ export class ExchangeFeedHub {
           this.upsertTick('binance', symbol, parseFloat(d.c), d.P ? parseFloat(d.P) : null);
         } catch { /* malformed frame — ignore, next tick will arrive */ }
       });
-      socket.addEventListener('close', () => { this.connections.binance.socket = null; });
-      socket.addEventListener('error', () => { this.connections.binance.socket = null; });
+      socket.addEventListener('close', (evt: CloseEvent) => {
+        console.warn(`[exchange-feed] binance closed: code=${evt.code} reason=${evt.reason}`);
+        this.connections.binance.socket = null;
+      });
+      socket.addEventListener('error', () => {
+        console.warn('[exchange-feed] binance socket error event');
+        this.connections.binance.socket = null;
+      });
     } catch (err) {
       console.error('[exchange-feed] binance connect failed:', err);
     }
@@ -533,8 +539,14 @@ export class ExchangeFeedHub {
           this.upsertTick('coinbase', symbol, price, changePct);
         } catch { /* malformed frame — ignore */ }
       });
-      socket.addEventListener('close', () => { this.connections.coinbase.socket = null; });
-      socket.addEventListener('error', () => { this.connections.coinbase.socket = null; });
+      socket.addEventListener('close', (evt: CloseEvent) => {
+        console.warn(`[exchange-feed] coinbase closed: code=${evt.code} reason=${evt.reason}`);
+        this.connections.coinbase.socket = null;
+      });
+      socket.addEventListener('error', () => {
+        console.warn('[exchange-feed] coinbase socket error event');
+        this.connections.coinbase.socket = null;
+      });
     } catch (err) {
       console.error('[exchange-feed] coinbase connect failed:', err);
     }
@@ -567,8 +579,14 @@ export class ExchangeFeedHub {
           }
         } catch { /* malformed frame — ignore */ }
       });
-      socket.addEventListener('close', () => { this.connections.kraken.socket = null; });
-      socket.addEventListener('error', () => { this.connections.kraken.socket = null; });
+      socket.addEventListener('close', (evt: CloseEvent) => {
+        console.warn(`[exchange-feed] kraken closed: code=${evt.code} reason=${evt.reason}`);
+        this.connections.kraken.socket = null;
+      });
+      socket.addEventListener('error', () => {
+        console.warn('[exchange-feed] kraken socket error event');
+        this.connections.kraken.socket = null;
+      });
     } catch (err) {
       console.error('[exchange-feed] kraken connect failed:', err);
     }
