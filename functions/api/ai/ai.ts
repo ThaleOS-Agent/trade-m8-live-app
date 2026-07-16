@@ -16,7 +16,7 @@ import {
   AIMarketAnalysis,
   FusionPrediction,
   EnhancedSignal,
-} from '../lib/ai-enhancement-engine';
+} from '../../lib/ai-enhancement-engine';
 
 // ============================================================================
 // ENV INTERFACE

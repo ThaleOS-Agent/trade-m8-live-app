@@ -348,15 +348,42 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
  * Trades handler
  */
 async function handleTrades(request: Request, env: Env, userId: string): Promise<Response> {
-  if (request.method === 'GET') {
-    const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '100');
-    
-    const trades = await env.DB.prepare(
-      'SELECT * FROM trades WHERE user_id = ? ORDER BY opened_at DESC LIMIT ?'
-    ).bind(userId, limit).all();
+  const url = new URL(request.url);
+  const segments = url.pathname.split('/').filter(Boolean); // ['api','trades',<id>?]
+  const tradeId = segments[2];
+
+  // ── GET /api/trades[?status=&limit=] ──────────────────────────────────────
+  if (request.method === 'GET' && !tradeId) {
+    const limit  = parseInt(url.searchParams.get('limit') || '100');
+    const status = url.searchParams.get('status');
+
+    const trades = status
+      ? await env.DB.prepare(
+          'SELECT * FROM trades WHERE user_id = ? AND status = ? ORDER BY opened_at DESC LIMIT ?'
+        ).bind(userId, status, limit).all()
+      : await env.DB.prepare(
+          'SELECT * FROM trades WHERE user_id = ? ORDER BY opened_at DESC LIMIT ?'
+        ).bind(userId, limit).all();
 
     return jsonResponse({ trades: trades.results });
+  }
+
+  // ── DELETE /api/trades/:id — cancel a pending trade ───────────────────────
+  if (request.method === 'DELETE' && tradeId) {
+    const trade = await env.DB.prepare(
+      'SELECT id, status FROM trades WHERE id = ? AND user_id = ?'
+    ).bind(tradeId, userId).first() as any;
+
+    if (!trade) return jsonResponse({ error: 'Trade not found' }, {}, 404);
+    if (trade.status !== 'pending') {
+      return jsonResponse({ error: `Cannot cancel a trade with status '${trade.status}'` }, {}, 409);
+    }
+
+    await env.DB.prepare(
+      'UPDATE trades SET status = ?, closed_at = datetime(\'now\') WHERE id = ? AND user_id = ?'
+    ).bind('cancelled', tradeId, userId).run();
+
+    return jsonResponse({ success: true, tradeId, status: 'cancelled' });
   }
 
   return jsonResponse({ error: 'Method not allowed' }, {}, 405);

@@ -2,9 +2,9 @@
  * Live Trading API Endpoint for Cloudflare Workers
  * Handles real-time trading execution with risk management
  */
-import { TradingSystem } from '../lib/trading-system';
-import { createExchangeManager } from '../lib/sdk-exchange-connector';
-import { createForexManager } from '../lib/forex-connector';
+import { TradingSystem } from '../../lib/trading-system';
+import { createExchangeManager } from '../../lib/sdk-exchange-connector';
+import { createForexManager } from '../../lib/forex-connector';
 
 const FOREX_EXCHANGES = new Set(['oanda', 'exness']);
 

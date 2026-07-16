@@ -10,9 +10,9 @@
  *   DELETE /api/algo-trading/order/:id  — cancel an order
  */
 
-import { createExchangeManager } from '../lib/sdk-exchange-connector';
-import { createAlgoEngine, AlgoConfig } from '../lib/algo-trading-engine';
-import { createForexManager } from '../lib/forex-connector';
+import { createExchangeManager } from '../../lib/sdk-exchange-connector';
+import { createAlgoEngine, AlgoConfig } from '../../lib/algo-trading-engine';
+import { createForexManager } from '../../lib/forex-connector';
 
 // Forex exchanges handled by ForexManager, not sdk-exchange-connector
 const FOREX_EXCHANGES = new Set(['oanda', 'exness']);

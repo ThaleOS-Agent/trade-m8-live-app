@@ -2,4 +2,4 @@
  * TradingView catch-all routing
  * Maps /api/tradingview/* → tradingview.ts handler
  */
-export { onRequest } from '../tradingview';
+export { onRequest } from './tradingview';

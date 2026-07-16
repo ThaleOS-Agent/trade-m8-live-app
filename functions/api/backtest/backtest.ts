@@ -16,7 +16,7 @@ import {
   generateSampleHistoricalData,
   BacktestConfig,
   HistoricalDataPoint,
-} from '../lib/backtesting-engine';
+} from '../../lib/backtesting-engine';
 
 // ============================================================================
 // ENV INTERFACE

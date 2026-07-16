@@ -16,7 +16,7 @@ import {
   createForexManager,
   ForexCredentials,
   getStaticInstruments,
-} from '../lib/forex-connector';
+} from '../../lib/forex-connector';
 
 // ─── Env interface ────────────────────────────────────────────────────────────
 
@@ -237,9 +237,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       if (result.success && result.tradeId) {
         const tradeId = crypto.randomUUID();
         await env.DB.prepare(`
-          INSERT INTO trades (id, user_id, bot_id, symbol, side, entry_price, quantity, status, opened_at, exchange_order_id)
-          VALUES (?, ?, NULL, ?, ?, ?, ?, 'open', datetime('now'), ?)
-        `).bind(tradeId, userId, symbol, side, result.price || 0, units, result.tradeId).run().catch(() => {});
+          INSERT INTO trades (id, user_id, bot_id, symbol, side, type, entry_price, quantity, stop_loss, take_profit, status, opened_at, exchange_order_id)
+          VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 'open', datetime('now'), ?)
+        `).bind(
+          tradeId, userId, symbol, side, type || 'market',
+          result.price || 0, units, stopLoss ?? null, takeProfit ?? null,
+          result.tradeId,
+        ).run().catch(() => {});
       }
 
       return json({ success: result.success, result });

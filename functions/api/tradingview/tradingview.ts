@@ -25,9 +25,9 @@
  * signature verification. Leave empty to accept all requests (dev only).
  */
 
-import { createExchangeManager } from '../lib/sdk-exchange-connector';
-import { createForexManager } from '../lib/forex-connector';
-import { sendNotification } from '../lib/notification-service';
+import { createExchangeManager } from '../../lib/sdk-exchange-connector';
+import { createForexManager } from '../../lib/forex-connector';
+import { sendNotification } from '../../lib/notification-service';
 
 const FOREX_SYMBOLS = new Set([
   'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'NZD', 'CAD',
