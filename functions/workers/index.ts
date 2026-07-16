@@ -165,6 +165,7 @@ export interface Env {
   STORAGE: R2Bucket;
   TRADING_ENGINE: DurableObjectNamespace;
   MARKET_DATA: DurableObjectNamespace;
+  EXCHANGE_FEEDS: DurableObjectNamespace;
   JWT_SECRET: string;
   COINGECKO_API_KEY: string;
   // Exchange API keys (same secrets as Pages project)
@@ -264,6 +265,15 @@ export default {
       }, cors);
     }
 
+    // Live Binance/Coinbase/Kraken WebSocket feeds — see ExchangeFeedHub below
+    if (url.pathname === '/exchange-feeds' || url.pathname === '/exchange-feeds/status') {
+      const stub = _env.EXCHANGE_FEEDS.get(_env.EXCHANGE_FEEDS.idFromName('hub'));
+      const subPath = url.pathname === '/exchange-feeds/status' ? '/status' : '/ticks';
+      const doResponse = await stub.fetch(`https://exchange-feed-hub${subPath}${url.search}`);
+      const body = await doResponse.text();
+      return new Response(body, { status: doResponse.status, headers: { 'Content-Type': 'application/json', ...cors } });
+    }
+
     return json({ error: 'Not found' }, cors, 404);
   },
 
@@ -282,6 +292,11 @@ export default {
 
     if (cron === '* * * * *') {
       ctx.waitUntil(runScheduledBots(env));
+      // Touch ExchangeFeedHub so its constructor (and first WebSocket connect +
+      // alarm) runs promptly after a deploy, rather than waiting for the first
+      // real /exchange-feeds request. Its own alarm loop keeps it alive after that.
+      const feedHub = env.EXCHANGE_FEEDS.get(env.EXCHANGE_FEEDS.idFromName('hub'));
+      ctx.waitUntil(feedHub.fetch('https://exchange-feed-hub/status').catch(() => {}));
     }
   },
 };
@@ -391,6 +406,225 @@ export class MarketDataStore {
         symbol, price, change_24h, now
       );
       return json({ success: true }, cors);
+    }
+
+    return json({ error: 'Not found' }, cors, 404);
+  }
+}
+
+// ============================================================================
+// DURABLE OBJECT: ExchangeFeedHub
+// Holds live outbound WebSocket connections to Binance, Coinbase, and Kraken
+// public ticker feeds (BTC/ETH/SOL). Self-heals via a recurring Alarm, which
+// is what keeps a Durable Object — and the outbound sockets it opened — alive
+// with zero incoming HTTP traffic; a plain fetch()-only DO would be evicted
+// and the connections would die silently.
+// ============================================================================
+type FeedExchange = 'binance' | 'coinbase' | 'kraken';
+
+interface FeedConnection {
+  socket:        WebSocket | null;
+  lastMessageAt: number | null;
+  reconnects:    number;
+}
+
+const FEED_SYMBOLS = ['BTC', 'ETH', 'SOL'] as const;
+const ALARM_INTERVAL_MS = 30_000;
+
+export class ExchangeFeedHub {
+  private state: DurableObjectState;
+  private connections: Record<FeedExchange, FeedConnection> = {
+    binance:  { socket: null, lastMessageAt: null, reconnects: 0 },
+    coinbase: { socket: null, lastMessageAt: null, reconnects: 0 },
+    kraken:   { socket: null, lastMessageAt: null, reconnects: 0 },
+  };
+
+  constructor(state: DurableObjectState, _env: Env) {
+    this.state = state;
+    this.state.blockConcurrencyWhile(async () => {
+      this.state.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS ticks (
+          exchange   TEXT NOT NULL,
+          symbol     TEXT NOT NULL,
+          price      REAL NOT NULL,
+          change_24h REAL,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (exchange, symbol)
+        )
+      `);
+      this.connectAll();
+      const nextAlarm = await this.state.storage.getAlarm();
+      if (!nextAlarm) await this.state.storage.setAlarm(Date.now() + ALARM_INTERVAL_MS);
+    });
+  }
+
+  // ── Connection management ─────────────────────────────────────────────────
+
+  private connectAll(): void {
+    this.connectBinance();
+    this.connectCoinbase();
+    this.connectKraken();
+  }
+
+  private isOpen(exchange: FeedExchange): boolean {
+    return this.connections[exchange].socket?.readyState === WebSocket.READY_STATE_OPEN;
+  }
+
+  private upsertTick(exchange: FeedExchange, symbol: string, price: number, change24h: number | null): void {
+    const now = new Date().toISOString();
+    this.connections[exchange].lastMessageAt = Date.now();
+    this.state.storage.sql.exec(
+      `INSERT INTO ticks (exchange, symbol, price, change_24h, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(exchange, symbol) DO UPDATE SET
+         price = excluded.price, change_24h = excluded.change_24h, updated_at = excluded.updated_at`,
+      exchange, symbol, price, change24h, now,
+    );
+  }
+
+  private connectBinance(): void {
+    if (this.isOpen('binance')) return;
+    try {
+      const streams = FEED_SYMBOLS.map(s => `${s.toLowerCase()}usdt@ticker`).join('/');
+      const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      this.connections.binance.socket = socket;
+
+      socket.addEventListener('message', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data as string) as {
+            data?: { e?: string; s?: string; c?: string; P?: string };
+          };
+          const d = payload.data;
+          if (d?.e !== '24hrTicker' || !d.s || !d.c) return;
+          const symbol = d.s.replace(/USDT$/, '');
+          this.upsertTick('binance', symbol, parseFloat(d.c), d.P ? parseFloat(d.P) : null);
+        } catch { /* malformed frame — ignore, next tick will arrive */ }
+      });
+      socket.addEventListener('close', () => { this.connections.binance.socket = null; });
+      socket.addEventListener('error', () => { this.connections.binance.socket = null; });
+    } catch (err) {
+      console.error('[exchange-feed] binance connect failed:', err);
+    }
+  }
+
+  private connectCoinbase(): void {
+    if (this.isOpen('coinbase')) return;
+    try {
+      const socket = new WebSocket('wss://ws-feed.exchange.coinbase.com');
+      this.connections.coinbase.socket = socket;
+
+      socket.addEventListener('open', () => {
+        const productIds = FEED_SYMBOLS.map(s => `${s}-USD`);
+        socket.send(JSON.stringify({
+          type: 'subscribe',
+          channels: [{ name: 'ticker', product_ids: productIds }, 'heartbeat'],
+        }));
+      });
+      socket.addEventListener('message', (evt: MessageEvent) => {
+        try {
+          const d = JSON.parse(evt.data as string) as {
+            type?: string; product_id?: string; price?: string; open_24h?: string;
+          };
+          if (d.type !== 'ticker' || !d.product_id || !d.price) return;
+          const symbol = d.product_id.replace(/-USD$/, '');
+          const price = parseFloat(d.price);
+          const open = d.open_24h ? parseFloat(d.open_24h) : null;
+          const changePct = open ? ((price - open) / open) * 100 : null;
+          this.upsertTick('coinbase', symbol, price, changePct);
+        } catch { /* malformed frame — ignore */ }
+      });
+      socket.addEventListener('close', () => { this.connections.coinbase.socket = null; });
+      socket.addEventListener('error', () => { this.connections.coinbase.socket = null; });
+    } catch (err) {
+      console.error('[exchange-feed] coinbase connect failed:', err);
+    }
+  }
+
+  private connectKraken(): void {
+    if (this.isOpen('kraken')) return;
+    try {
+      const socket = new WebSocket('wss://ws.kraken.com/v2');
+      this.connections.kraken.socket = socket;
+
+      socket.addEventListener('open', () => {
+        const symbols = FEED_SYMBOLS.map(s => `${s}/USD`);
+        socket.send(JSON.stringify({
+          method: 'subscribe',
+          params: { channel: 'ticker', symbol: symbols },
+        }));
+      });
+      socket.addEventListener('message', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data as string) as {
+            channel?: string; type?: string;
+            data?: Array<{ symbol?: string; last?: number; change_pct?: number }>;
+          };
+          if (payload.channel !== 'ticker' || !payload.data) return;
+          for (const tick of payload.data) {
+            if (!tick.symbol || tick.last == null) continue;
+            const symbol = tick.symbol.replace(/\/USD$/, '');
+            this.upsertTick('kraken', symbol, tick.last, tick.change_pct ?? null);
+          }
+        } catch { /* malformed frame — ignore */ }
+      });
+      socket.addEventListener('close', () => { this.connections.kraken.socket = null; });
+      socket.addEventListener('error', () => { this.connections.kraken.socket = null; });
+    } catch (err) {
+      console.error('[exchange-feed] kraken connect failed:', err);
+    }
+  }
+
+  // ── Alarm: the self-healing heartbeat ─────────────────────────────────────
+
+  async alarm(): Promise<void> {
+    (['binance', 'coinbase', 'kraken'] as FeedExchange[]).forEach(exchange => {
+      if (!this.isOpen(exchange)) {
+        this.connections[exchange].reconnects += 1;
+        if (exchange === 'binance') this.connectBinance();
+        if (exchange === 'coinbase') this.connectCoinbase();
+        if (exchange === 'kraken') this.connectKraken();
+      }
+    });
+    await this.state.storage.setAlarm(Date.now() + ALARM_INTERVAL_MS);
+  }
+
+  // ── HTTP interface ─────────────────────────────────────────────────────────
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const cors = {
+      'Access-Control-Allow-Origin':  '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
+
+    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    if (url.pathname === '/ticks' && request.method === 'GET') {
+      const exchange = url.searchParams.get('exchange');
+      const symbol   = url.searchParams.get('symbol');
+      let query = 'SELECT * FROM ticks WHERE 1=1';
+      const params: string[] = [];
+      if (exchange) { query += ' AND exchange = ?'; params.push(exchange); }
+      if (symbol)   { query += ' AND symbol = ?';   params.push(symbol); }
+      query += ' ORDER BY exchange, symbol';
+      const rows = this.state.storage.sql.exec(query, ...params).toArray();
+      return json({ ticks: rows, timestamp: new Date().toISOString() }, cors);
+    }
+
+    if (url.pathname === '/status' && request.method === 'GET') {
+      const now = Date.now();
+      const status = Object.fromEntries(
+        (['binance', 'coinbase', 'kraken'] as FeedExchange[]).map(exchange => {
+          const c = this.connections[exchange];
+          return [exchange, {
+            connected: this.isOpen(exchange),
+            secondsSinceLastMessage: c.lastMessageAt ? Math.round((now - c.lastMessageAt) / 1000) : null,
+            reconnects: c.reconnects,
+          }];
+        }),
+      );
+      return json({ status, timestamp: new Date().toISOString() }, cors);
     }
 
     return json({ error: 'Not found' }, cors, 404);

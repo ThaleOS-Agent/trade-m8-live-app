@@ -2,7 +2,8 @@
 # This Worker runs alongside the Pages project and handles:
 #   - Scheduled market data updates (every 5 minutes)
 #   - Scheduled bot status checks (every minute)
-#   - Durable Objects: TradingEngine, MarketData
+#   - Durable Objects: TradingEngine, MarketData, ExchangeFeedHub (live
+#     Binance/Coinbase/Kraken WebSocket feeds — see /exchange-feeds routes)
 #
 # Deploy with: npx wrangler deploy --config wrangler.worker.toml
 
@@ -61,6 +62,14 @@ class_name = "TradingEngine"
 name = "MARKET_DATA"
 class_name = "MarketDataStore"
 
+[[durable_objects.bindings]]
+name = "EXCHANGE_FEEDS"
+class_name = "ExchangeFeedHub"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["TradingEngine", "MarketDataStore"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["ExchangeFeedHub"]
