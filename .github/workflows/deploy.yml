@@ -85,7 +85,7 @@ jobs:
         if: steps.check-credentials.outputs.available == 'true'
         continue-on-error: true   # Worker URL may not be publicly exposed
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://trade-m8-worker.thaleosnetwork.workers.dev/health)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://trade-m8-worker.thaleos-app.workers.dev/health)
           echo "Worker /health → HTTP $STATUS"
 
       - name: Health check — Executor (Python)
