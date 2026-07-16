@@ -12,7 +12,7 @@
  *   GET    /api/notifications/test              — Send test notification
  */
 
-import { sendNotification } from '../lib/notification-service';
+import { sendNotification } from '../../lib/notification-service';
 
 interface Env {
   DB: D1Database;
