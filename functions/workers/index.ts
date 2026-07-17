@@ -202,6 +202,12 @@ export interface Env {
   OANDA_PRACTICE: string;
   EXNESS_API_KEY: string;
   EXNESS_ACCOUNT_LOGIN: string;
+  MT4_API_TOKEN: string;
+  MT4_ACCOUNT_ID: string;
+  MT4_REGION: string;
+  MT5_API_TOKEN: string;
+  MT5_ACCOUNT_ID: string;
+  MT5_REGION: string;
   ALPHA_VANTAGE_API_KEY: string;
   FINNHUB_API_KEY: string;
   // ── Python Executor (AWS Tokyo) ─────────────────────────────────────────────
@@ -776,6 +782,12 @@ async function runScheduledBots(env: Env): Promise<void> {
       OANDA_API_KEY: env.OANDA_API_KEY,
       OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
       OANDA_PRACTICE: env.OANDA_PRACTICE,
+      MT4_API_TOKEN: env.MT4_API_TOKEN,
+      MT4_ACCOUNT_ID: env.MT4_ACCOUNT_ID,
+      MT4_REGION: env.MT4_REGION,
+      MT5_API_TOKEN: env.MT5_API_TOKEN,
+      MT5_ACCOUNT_ID: env.MT5_ACCOUNT_ID,
+      MT5_REGION: env.MT5_REGION,
     });
 
     // Run all due bots in parallel; individual failures don't stop others

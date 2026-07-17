@@ -1514,6 +1514,105 @@ class OandaExchangeAdapter {
   }
 }
 
+// ─── MetaTrader 4/5 (via MetaApi.cloud) — MT4/MT5 have no official REST/WS
+// API and Cloudflare Workers can't host an actual MetaTrader terminal
+// (Windows-only). MetaApi.cloud is a third-party cloud bridge that exposes a
+// plain HTTP REST API for a connected MT4/5 account, usable directly from a
+// Worker with no native SDK/binary. One adapter instance = one connected
+// MT4 or MT5 account (they use the same API shape, so this class serves
+// both — ExchangeManager registers up to two independent connections,
+// 'mt4' and 'mt5', each with its own token + accountId). ───────────────────
+// Docs: https://metaapi.cloud/docs/client/restApi/
+
+class MetaApiExchangeAdapter {
+  private token: string;
+  private accountId: string;
+  private tradingBase: string;
+  private marketDataBase: string;
+
+  constructor(token: string, accountId: string, region = 'new-york') {
+    this.token = token;
+    this.accountId = accountId;
+    this.tradingBase = `https://mt-client-api-v1.${region}.agiliumtrade.ai`;
+    this.marketDataBase = `https://mt-market-data-client-api-v1.${region}.agiliumtrade.ai`;
+  }
+
+  private headers(): Record<string, string> {
+    return { 'auth-token': this.token, 'Content-Type': 'application/json' };
+  }
+
+  async getTicker(symbol: string): Promise<Ticker> {
+    const res = await fetch(
+      `${this.tradingBase}/users/current/accounts/${this.accountId}/symbols/${symbol}/current-price`,
+      { headers: this.headers() },
+    );
+    if (!res.ok) throw new Error(`MetaApi current-price failed [${res.status}]: ${await res.text()}`);
+    const data: any = await res.json();
+    return {
+      symbol: data.symbol ?? symbol,
+      last: (parseFloat(data.bid) + parseFloat(data.ask)) / 2,
+      bid: parseFloat(data.bid),
+      ask: parseFloat(data.ask),
+      timestamp: new Date(data.time ?? Date.now()).getTime(),
+    };
+  }
+
+  async getOHLCV(symbol: string, timeframe = '1h', limit = 100): Promise<OHLCV[]> {
+    const url = `${this.marketDataBase}/users/current/accounts/${this.accountId}/historical-market-data/symbols/${symbol}/timeframes/${timeframe}/candles?limit=${Math.min(limit, 1000)}`;
+    const res = await fetch(url, { headers: this.headers() });
+    if (!res.ok) throw new Error(`MetaApi historical-candles failed [${res.status}]: ${await res.text()}`);
+    const data: any[] = await res.json();
+    // API returns newest-first ("loaded in backwards direction") — reverse to oldest-first
+    return data
+      .map(c => ({
+        timestamp: new Date(c.time).getTime(),
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.tickVolume ?? c.volume ?? 0,
+      }))
+      .reverse();
+  }
+
+  async placeOrder(p: OrderParams): Promise<OrderResult> {
+    const isLimitOrStop = p.type === 'limit' || p.type === 'stop_limit' || p.type === 'stop_market';
+    const actionType = p.side === 'buy'
+      ? (isLimitOrStop ? 'ORDER_TYPE_BUY_LIMIT' : 'ORDER_TYPE_BUY')
+      : (isLimitOrStop ? 'ORDER_TYPE_SELL_LIMIT' : 'ORDER_TYPE_SELL');
+
+    const body: Record<string, unknown> = {
+      actionType,
+      symbol: p.symbol,
+      volume: p.amount,
+    };
+    if (p.stopLossPrice) body.stopLoss = p.stopLossPrice;
+    if (p.takeProfitPrice) body.takeProfit = p.takeProfitPrice;
+    if (isLimitOrStop && p.price) body.openPrice = p.price;
+
+    const res = await fetch(
+      `${this.tradingBase}/users/current/accounts/${this.accountId}/trade`,
+      { method: 'POST', headers: this.headers(), body: JSON.stringify(body) },
+    );
+    const data: any = await res.json().catch(() => ({}));
+
+    if (!res.ok || (data.numericCode && data.numericCode !== 10009)) {
+      return { success: false, error: data.message ?? `MetaApi trade failed [${res.status}]` };
+    }
+
+    return {
+      success: true,
+      orderId: data.orderId ?? data.positionId,
+      symbol: p.symbol,
+      side: p.side,
+      type: p.type,
+      amount: p.amount,
+      filled: p.amount,
+      status: data.stringCode ?? 'filled',
+    };
+  }
+}
+
 // ─── Exchange Manager ─────────────────────────────────────────────────────────
 
 interface ExchangeCredentials {
@@ -1551,6 +1650,13 @@ interface ExchangeCredentials {
   OANDA_API_KEY?: string;
   OANDA_ACCOUNT_ID?: string;
   OANDA_PRACTICE?: string; // 'true' = practice, default = live
+  // MetaTrader 4/5 (via MetaApi.cloud) — one token+account per platform
+  MT4_API_TOKEN?: string;
+  MT4_ACCOUNT_ID?: string;
+  MT4_REGION?: string; // default 'new-york'
+  MT5_API_TOKEN?: string;
+  MT5_ACCOUNT_ID?: string;
+  MT5_REGION?: string; // default 'new-york'
 }
 
 export class ExchangeManager {
@@ -1569,6 +1675,8 @@ export class ExchangeManager {
   private bitfinex?: BitfinexConnector;
   private gemini?: GeminiConnector;
   private oanda?: OandaExchangeAdapter;
+  private mt4?: MetaApiExchangeAdapter;
+  private mt5?: MetaApiExchangeAdapter;
 
   constructor(creds: ExchangeCredentials) {
     if (creds.BINANCE_API_KEY && creds.BINANCE_SECRET_KEY) {
@@ -1618,6 +1726,12 @@ export class ExchangeManager {
         creds.OANDA_PRACTICE === 'true'
       );
     }
+    if (creds.MT4_API_TOKEN && creds.MT4_ACCOUNT_ID) {
+      this.mt4 = new MetaApiExchangeAdapter(creds.MT4_API_TOKEN, creds.MT4_ACCOUNT_ID, creds.MT4_REGION);
+    }
+    if (creds.MT5_API_TOKEN && creds.MT5_ACCOUNT_ID) {
+      this.mt5 = new MetaApiExchangeAdapter(creds.MT5_API_TOKEN, creds.MT5_ACCOUNT_ID, creds.MT5_REGION);
+    }
   }
 
   getConnectedExchanges(): string[] {
@@ -1635,6 +1749,8 @@ export class ExchangeManager {
     if (this.bitfinex)  list.push('bitfinex');
     if (this.gemini)    list.push('gemini');
     if (this.oanda)     list.push('oanda');
+    if (this.mt4)       list.push('mt4');
+    if (this.mt5)       list.push('mt5');
     return list;
   }
 
@@ -1653,6 +1769,8 @@ export class ExchangeManager {
       case 'bitfinex': if (this.bitfinex)  return this.bitfinex;  break;
       case 'gemini':   if (this.gemini)    return this.gemini;    break;
       case 'oanda':    if (this.oanda)     return this.oanda;     break;
+      case 'mt4':      if (this.mt4)       return this.mt4;       break;
+      case 'mt5':      if (this.mt5)       return this.mt5;       break;
     }
     throw new Error(`Exchange "${name}" not configured`);
   }
