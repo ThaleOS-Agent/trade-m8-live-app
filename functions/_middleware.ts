@@ -4,6 +4,7 @@
  */
 
 import { CoinGeckoService } from './lib/coingecko-service';
+import { VALID_STRATEGIES } from './lib/algo-trading-engine';
 
 // Environment interface
 interface Env {
@@ -288,6 +289,12 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
     if (!name || !strategy || !symbol || !exchange) {
       return jsonResponse({ error: 'name, strategy, symbol, exchange required' }, {}, 400);
     }
+    if (!VALID_STRATEGIES.includes(strategy)) {
+      return jsonResponse({
+        error: `Unknown strategy '${strategy}' — the automated cron runner only executes: ${VALID_STRATEGIES.join(', ')}`,
+        validStrategies: VALID_STRATEGIES,
+      }, {}, 400);
+    }
     const newBotId = crypto.randomUUID();
     await env.DB.prepare(
       `INSERT INTO trading_bots (id, user_id, name, strategy, symbol, exchange, risk_level, position_size, status, created_at, updated_at)
@@ -299,6 +306,12 @@ async function handleBots(request: Request, env: Env, userId: string): Promise<R
   // ── PUT /api/bots/:id ─────────────────────────────────────────────────────
   if (request.method === 'PUT' && botId) {
     const body = await request.json() as any;
+    if (body.strategy !== undefined && !VALID_STRATEGIES.includes(body.strategy)) {
+      return jsonResponse({
+        error: `Unknown strategy '${body.strategy}' — the automated cron runner only executes: ${VALID_STRATEGIES.join(', ')}`,
+        validStrategies: VALID_STRATEGIES,
+      }, {}, 400);
+    }
     const fields: string[] = [];
     const values: any[] = [];
     // Support both camelCase (from frontend) and snake_case; map to actual DB columns

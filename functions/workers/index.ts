@@ -12,7 +12,7 @@
  */
 
 import { createExchangeManager } from '../lib/sdk-exchange-connector';
-import { createAlgoEngine, AlgoConfig, AlgoTradeResult } from '../lib/algo-trading-engine';
+import { createAlgoEngine, AlgoConfig, AlgoTradeResult, StrategyName, VALID_STRATEGIES } from '../lib/algo-trading-engine';
 
 // ============================================================================
 // PYTHON EXECUTOR CLIENT
@@ -817,11 +817,7 @@ async function runBotCycle(bot: BotRow, manager: ReturnType<typeof createExchang
       params:        storedConfig.params,
     };
 
-    const VALID_STRATEGIES = new Set([
-      'momentum','rsi_reversion','macd_crossover','breakout',
-      'scalping','dual_ma','buy_the_dip','trend_following',
-    ]);
-    if (!VALID_STRATEGIES.has(bot.strategy)) {
+    if (!VALID_STRATEGIES.includes(bot.strategy as StrategyName)) {
       const msg = `Unknown strategy '${bot.strategy}' — update the bot config`;
       console.error(`${tag} ${msg}`);
       await env.DB.prepare(

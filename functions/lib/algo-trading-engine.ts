@@ -31,6 +31,17 @@ export type StrategyName =
   | 'buy_the_dip'      // Bull-market: RSI pullback inside an EMA-200 uptrend
   | 'trend_following'; // Bull-market: multi-EMA alignment + price-near-EMA21 entry
 
+// Single source of truth for what the cron engine can actually execute.
+// Bot-creation/update validation (functions/_middleware.ts) and the cron
+// runner (functions/workers/index.ts) both import this — previously each
+// kept its own copy and they drifted apart, letting bots get created with
+// strategy names (from src/lib/tradingStrategies.ts's separate AI/news
+// vocabulary) that this engine has never implemented.
+export const VALID_STRATEGIES: readonly StrategyName[] = [
+  'momentum', 'rsi_reversion', 'macd_crossover', 'breakout',
+  'scalping', 'dual_ma', 'buy_the_dip', 'trend_following',
+] as const;
+
 export type AlgoSignal = 'buy' | 'sell' | 'hold';
 
 export interface AlgoConfig {
