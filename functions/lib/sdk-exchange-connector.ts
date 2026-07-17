@@ -1,8 +1,10 @@
 /**
  * Exchange Connector for Cloudflare Workers
  * Uses fetch + WebCrypto (no Node.js dependencies)
- * Supports: Binance, Kraken, Bybit, KuCoin, Alpaca
+ * Supports: Binance, Kraken, Bybit, KuCoin, Alpaca, OANDA (forex/commodities)
  */
+
+import { OANDAConnector, type ForexOrder } from './forex-connector';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1443,6 +1445,75 @@ class GeminiConnector {
   }
 }
 
+// ─── OANDA (forex/commodities) — adapts OANDAConnector to the exchange-style
+// getTicker/getOHLCV/placeOrder interface so the algo engine (which only
+// knows about ExchangeManager) can run forex/gold bots the same way it runs
+// crypto ones. Reuses the existing, already-implemented OANDA v20 REST logic
+// in forex-connector.ts rather than duplicating it. ────────────────────────
+
+class OandaExchangeAdapter {
+  private conn: OANDAConnector;
+
+  constructor(apiKey: string, accountId: string, practice: boolean) {
+    this.conn = new OANDAConnector(apiKey, accountId, practice);
+  }
+
+  async getBalances(): Promise<Balance[]> {
+    const account = await this.conn.getAccountSummary();
+    const total = parseFloat(account.balance ?? '0');
+    const marginUsed = parseFloat(account.marginUsed ?? '0');
+    return [{
+      asset: account.currency ?? 'USD',
+      free: total - marginUsed,
+      locked: marginUsed,
+      total,
+    }];
+  }
+
+  async getTicker(symbol: string): Promise<Ticker> {
+    const q = await this.conn.getQuote(symbol);
+    return {
+      symbol,
+      last: q.mid,
+      bid: q.bid,
+      ask: q.ask,
+      timestamp: new Date(q.timestamp).getTime(),
+    };
+  }
+
+  async getOHLCV(symbol: string, granularity = 'H1', limit = 100): Promise<OHLCV[]> {
+    return this.conn.getCandles(symbol, granularity, limit);
+  }
+
+  async placeOrder(p: OrderParams): Promise<OrderResult> {
+    const type: ForexOrder['type'] =
+      p.type === 'limit' ? 'limit' : p.type === 'market' ? 'market' : 'stop'; // stop_market/stop_limit -> stop
+    const result = await this.conn.placeOrder({
+      symbol: p.symbol,
+      side: p.side,
+      type,
+      units: Math.abs(p.amount),
+      price: p.price,
+      stopLoss: p.stopLossPrice,
+      takeProfit: p.takeProfitPrice,
+    });
+    return {
+      success: result.success,
+      orderId: result.tradeId ?? result.orderId,
+      exchange: 'oanda',
+      symbol: result.symbol,
+      side: result.side,
+      type: p.type,
+      amount: result.units,
+      filled: result.status === 'filled' ? result.units : 0,
+      price: result.price,
+      averagePrice: result.price,
+      status: result.status,
+      error: result.error,
+    };
+  }
+}
+
 // ─── Exchange Manager ─────────────────────────────────────────────────────────
 
 interface ExchangeCredentials {
@@ -1476,6 +1547,10 @@ interface ExchangeCredentials {
   BITFINEX_SECRET_KEY?: string;
   GEMINI_API_KEY?: string;
   GEMINI_SECRET_KEY?: string;
+  // Forex/commodities
+  OANDA_API_KEY?: string;
+  OANDA_ACCOUNT_ID?: string;
+  OANDA_PRACTICE?: string; // 'true' = practice, default = live
 }
 
 export class ExchangeManager {
@@ -1493,6 +1568,7 @@ export class ExchangeManager {
   private bitget?: BitgetConnector;
   private bitfinex?: BitfinexConnector;
   private gemini?: GeminiConnector;
+  private oanda?: OandaExchangeAdapter;
 
   constructor(creds: ExchangeCredentials) {
     if (creds.BINANCE_API_KEY && creds.BINANCE_SECRET_KEY) {
@@ -1535,6 +1611,13 @@ export class ExchangeManager {
     if (creds.GEMINI_API_KEY && creds.GEMINI_SECRET_KEY) {
       this.gemini = new GeminiConnector(creds.GEMINI_API_KEY, creds.GEMINI_SECRET_KEY);
     }
+    if (creds.OANDA_API_KEY && creds.OANDA_ACCOUNT_ID) {
+      this.oanda = new OandaExchangeAdapter(
+        creds.OANDA_API_KEY,
+        creds.OANDA_ACCOUNT_ID,
+        creds.OANDA_PRACTICE === 'true'
+      );
+    }
   }
 
   getConnectedExchanges(): string[] {
@@ -1551,6 +1634,7 @@ export class ExchangeManager {
     if (this.bitget)    list.push('bitget');
     if (this.bitfinex)  list.push('bitfinex');
     if (this.gemini)    list.push('gemini');
+    if (this.oanda)     list.push('oanda');
     return list;
   }
 
@@ -1568,6 +1652,7 @@ export class ExchangeManager {
       case 'bitget':   if (this.bitget)    return this.bitget;    break;
       case 'bitfinex': if (this.bitfinex)  return this.bitfinex;  break;
       case 'gemini':   if (this.gemini)    return this.gemini;    break;
+      case 'oanda':    if (this.oanda)     return this.oanda;     break;
     }
     throw new Error(`Exchange "${name}" not configured`);
   }
@@ -1613,6 +1698,12 @@ export class ExchangeManager {
       case 'gemini': {
         const map: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '30m': 1800, '1h': 3600, '4h': 14400, '1d': 86400 };
         tf = map[timeframe] ?? 3600;
+        break;
+      }
+      case 'oanda': {
+        // OANDA v20 granularity codes
+        const map: Record<string, string> = { '1m': 'M1', '5m': 'M5', '15m': 'M15', '30m': 'M30', '1h': 'H1', '4h': 'H4', '1d': 'D' };
+        tf = map[timeframe] ?? 'H1';
         break;
       }
       // binance, mexc, gateio, bitfinex all use standard timeframe strings (1m, 5m, 1h, etc.)

@@ -773,6 +773,9 @@ async function runScheduledBots(env: Env): Promise<void> {
       BITFINEX_SECRET_KEY: env.BITFINEX_SECRET_KEY,
       GEMINI_API_KEY: env.GEMINI_API_KEY,
       GEMINI_SECRET_KEY: env.GEMINI_SECRET_KEY,
+      OANDA_API_KEY: env.OANDA_API_KEY,
+      OANDA_ACCOUNT_ID: env.OANDA_ACCOUNT_ID,
+      OANDA_PRACTICE: env.OANDA_PRACTICE,
     });
 
     // Run all due bots in parallel; individual failures don't stop others
