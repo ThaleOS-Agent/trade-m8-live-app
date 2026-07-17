@@ -70,7 +70,8 @@ export async function onRequest(context: any): Promise<Response> {
       path.startsWith('/api/backtest') ||
       path.startsWith('/api/portfolio') ||
       path.startsWith('/api/prices') ||
-      path.startsWith('/api/notifications')
+      path.startsWith('/api/notifications') ||
+      path.startsWith('/api/ctrader')
     ) {
       return next();
     }

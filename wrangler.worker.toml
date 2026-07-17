@@ -3,7 +3,9 @@
 #   - Scheduled market data updates (every 5 minutes)
 #   - Scheduled bot status checks (every minute)
 #   - Durable Objects: TradingEngine, MarketData, ExchangeFeedHub (live
-#     Binance/Coinbase/Kraken WebSocket feeds — see /exchange-feeds routes)
+#     Binance/Coinbase/Kraken WebSocket feeds — see /exchange-feeds routes),
+#     CTraderSession (persistent cTrader Open API WS connection — one-time
+#     OAuth setup at /api/ctrader/connect on the Pages side)
 #
 # Deploy with: npx wrangler deploy --config wrangler.worker.toml
 
@@ -66,6 +68,10 @@ class_name = "MarketDataStore"
 name = "EXCHANGE_FEEDS"
 class_name = "ExchangeFeedHub"
 
+[[durable_objects.bindings]]
+name = "CTRADER_SESSION"
+class_name = "CTraderSession"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["TradingEngine", "MarketDataStore"]
@@ -73,3 +79,7 @@ new_sqlite_classes = ["TradingEngine", "MarketDataStore"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["ExchangeFeedHub"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["CTraderSession"]

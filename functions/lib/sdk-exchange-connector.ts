@@ -1613,6 +1613,75 @@ class MetaApiExchangeAdapter {
   }
 }
 
+// ─── cTrader (Open API) — unlike every other adapter in this file, cTrader
+// has no simple REST endpoint for prices/candles/orders; everything goes
+// over one persistent, heartbeated WebSocket connection. That connection
+// lives in the CTraderSession Durable Object (functions/workers/index.ts)
+// since only a Durable Object can hold a long-lived outbound connection —
+// this adapter is a thin HTTP client to that DO's own fetch() interface,
+// keeping the same getTicker/getOHLCV/placeOrder shape as every other
+// exchange so the algo engine doesn't need to know the difference. ────────
+
+function ctPeriod(timeframe: string): string {
+  const map: Record<string, string> = { '1m': 'M1', '5m': 'M5', '15m': 'M15', '30m': 'M30', '1h': 'H1', '4h': 'H4', '1d': 'D1' };
+  return map[timeframe] ?? 'H1';
+}
+
+class CTraderExchangeAdapter {
+  constructor(private sessionNamespace: DurableObjectNamespace) {}
+
+  private stub() {
+    return this.sessionNamespace.get(this.sessionNamespace.idFromName('session'));
+  }
+
+  async getTicker(symbol: string): Promise<Ticker> {
+    const res = await this.stub().fetch(`https://ctrader-session/price?symbol=${encodeURIComponent(symbol)}`);
+    const data: any = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? `cTrader price failed [${res.status}]`);
+    return {
+      symbol,
+      last: (data.bid + data.ask) / 2,
+      bid: data.bid,
+      ask: data.ask,
+      timestamp: data.timestamp ?? Date.now(),
+    };
+  }
+
+  async getOHLCV(symbol: string, timeframe = '1h', limit = 100): Promise<OHLCV[]> {
+    const period = ctPeriod(timeframe);
+    const res = await this.stub().fetch(`https://ctrader-session/candles?symbol=${encodeURIComponent(symbol)}&period=${period}&count=${limit}`);
+    const data: any = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? `cTrader candles failed [${res.status}]`);
+    return data.candles ?? [];
+  }
+
+  async placeOrder(p: OrderParams): Promise<OrderResult> {
+    const type = p.type === 'limit' ? 'limit' : (p.type === 'stop_market' || p.type === 'stop_limit') ? 'stop' : 'market';
+    const res = await this.stub().fetch('https://ctrader-session/order', {
+      method: 'POST',
+      body: JSON.stringify({
+        symbol: p.symbol, side: p.side, type,
+        amount: p.amount, price: p.price,
+        stopLossPrice: p.stopLossPrice, takeProfitPrice: p.takeProfitPrice,
+      }),
+    });
+    const data: any = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) {
+      return { success: false, error: data.error ?? `cTrader order failed [${res.status}]` };
+    }
+    return {
+      success: true,
+      orderId: data.result?.orderId ?? data.result?.positionId,
+      exchange: 'ctrader',
+      symbol: p.symbol,
+      side: p.side,
+      type: p.type,
+      amount: p.amount,
+      status: data.result?.stringCode ?? 'submitted',
+    };
+  }
+}
+
 // ─── Exchange Manager ─────────────────────────────────────────────────────────
 
 interface ExchangeCredentials {
@@ -1657,6 +1726,9 @@ interface ExchangeCredentials {
   MT5_API_TOKEN?: string;
   MT5_ACCOUNT_ID?: string;
   MT5_REGION?: string; // default 'new-york'
+  // cTrader — the WS session lives in a Durable Object, so this needs the
+  // namespace binding itself rather than a plain string credential.
+  CTRADER_SESSION?: DurableObjectNamespace;
 }
 
 export class ExchangeManager {
@@ -1677,6 +1749,7 @@ export class ExchangeManager {
   private oanda?: OandaExchangeAdapter;
   private mt4?: MetaApiExchangeAdapter;
   private mt5?: MetaApiExchangeAdapter;
+  private ctrader?: CTraderExchangeAdapter;
 
   constructor(creds: ExchangeCredentials) {
     if (creds.BINANCE_API_KEY && creds.BINANCE_SECRET_KEY) {
@@ -1732,6 +1805,9 @@ export class ExchangeManager {
     if (creds.MT5_API_TOKEN && creds.MT5_ACCOUNT_ID) {
       this.mt5 = new MetaApiExchangeAdapter(creds.MT5_API_TOKEN, creds.MT5_ACCOUNT_ID, creds.MT5_REGION);
     }
+    if (creds.CTRADER_SESSION) {
+      this.ctrader = new CTraderExchangeAdapter(creds.CTRADER_SESSION);
+    }
   }
 
   getConnectedExchanges(): string[] {
@@ -1751,6 +1827,7 @@ export class ExchangeManager {
     if (this.oanda)     list.push('oanda');
     if (this.mt4)       list.push('mt4');
     if (this.mt5)       list.push('mt5');
+    if (this.ctrader)   list.push('ctrader');
     return list;
   }
 
@@ -1771,6 +1848,7 @@ export class ExchangeManager {
       case 'oanda':    if (this.oanda)     return this.oanda;     break;
       case 'mt4':      if (this.mt4)       return this.mt4;       break;
       case 'mt5':      if (this.mt5)       return this.mt5;       break;
+      case 'ctrader':  if (this.ctrader)   return this.ctrader;   break;
     }
     throw new Error(`Exchange "${name}" not configured`);
   }

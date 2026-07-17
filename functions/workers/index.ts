@@ -166,6 +166,7 @@ export interface Env {
   TRADING_ENGINE: DurableObjectNamespace;
   MARKET_DATA: DurableObjectNamespace;
   EXCHANGE_FEEDS: DurableObjectNamespace;
+  CTRADER_SESSION: DurableObjectNamespace;
   JWT_SECRET: string;
   COINGECKO_API_KEY: string;
   // Exchange API keys (same secrets as Pages project)
@@ -208,6 +209,12 @@ export interface Env {
   MT5_API_TOKEN: string;
   MT5_ACCOUNT_ID: string;
   MT5_REGION: string;
+  // cTrader Open API — app-level OAuth2 credentials (one developer app,
+  // shared by all connected accounts). Per-account tokens live in KV,
+  // written by the OAuth callback (functions/api/ctrader/ctrader.ts).
+  CTRADER_CLIENT_ID: string;
+  CTRADER_CLIENT_SECRET: string;
+  CTRADER_DEMO: string; // 'true' = demo.ctraderapi.com, default = live1.p.ctrader.com
   ALPHA_VANTAGE_API_KEY: string;
   FINNHUB_API_KEY: string;
   // ── Python Executor (AWS Tokyo) ─────────────────────────────────────────────
@@ -656,6 +663,319 @@ export class ExchangeFeedHub {
 }
 
 // ============================================================================
+// DURABLE OBJECT: CTraderSession
+// Holds a persistent WebSocket connection to the cTrader Open API (JSON
+// protocol, port 5036) for a single connected account. Unlike OANDA/MT4/5,
+// cTrader has no simple request/response REST endpoint for prices or trades
+// — everything (auth, symbol lookup, candles, live prices, order placement)
+// goes over one persistent WS connection, request/response pairs correlated
+// by a client-assigned clientMsgId, with a required heartbeat every ~10s or
+// the server drops the connection. That's why this needs a Durable Object
+// (same self-healing Alarm pattern as ExchangeFeedHub) rather than a plain
+// per-call REST adapter.
+//
+// Auth is a one-time OAuth2 setup (see functions/api/ctrader/ctrader.ts) —
+// this class reads the resulting accessToken/accountId from KV (env.CACHE,
+// keys "ctrader:accessToken" / "ctrader:accountId"), written once by that
+// OAuth callback. CTRADER_CLIENT_ID/CTRADER_CLIENT_SECRET are app-level
+// secrets (one cTrader developer app, not per-user).
+//
+// Wire format verified against the authoritative proto source
+// (github.com/spotware/openapi-proto-messages): message envelope is
+// {clientMsgId, payloadType, payload}; prices are delta-encoded from a
+// trendbar's `low` field and scaled by 100000; volume is centiunits
+// (actual units * 100); heartbeat is payloadType 51 with an empty payload.
+// ============================================================================
+
+const CT_PAYLOAD = {
+  APP_AUTH_REQ: 2100,
+  APP_AUTH_RES: 2101,
+  ACCOUNT_AUTH_REQ: 2102,
+  ACCOUNT_AUTH_RES: 2103,
+  NEW_ORDER_REQ: 2106,
+  SYMBOLS_LIST_REQ: 2114,
+  SYMBOLS_LIST_RES: 2115,
+  EXECUTION_EVENT: 2126,
+  SUBSCRIBE_SPOTS_REQ: 2127,
+  SUBSCRIBE_SPOTS_RES: 2128,
+  SPOT_EVENT: 2131,
+  GET_TRENDBARS_REQ: 2137,
+  GET_TRENDBARS_RES: 2138,
+  ERROR_RES: 2142,
+  HEARTBEAT_EVENT: 51,
+} as const;
+
+const CT_PRICE_SCALE = 100_000;
+const CT_ALARM_INTERVAL_MS = 9_000; // under the ~10s heartbeat requirement
+
+interface CTPending {
+  resolve: (payload: any) => void;
+  reject: (err: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+export class CTraderSession {
+  private state: DurableObjectState;
+  private env: Env;
+  private socket: WebSocket | null = null;
+  private connecting: Promise<void> | null = null;
+  private accountId: number | null = null;
+  private pending = new Map<string, CTPending>();
+  private symbolCache = new Map<string, number>();     // symbolName -> symbolId
+  private spotCache = new Map<number, { bid: number; ask: number; timestamp: number }>();
+  private subscribedSymbols = new Set<number>();
+
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+    this.env = env;
+    this.state.blockConcurrencyWhile(async () => {
+      const next = await this.state.storage.getAlarm();
+      if (!next) await this.state.storage.setAlarm(Date.now() + CT_ALARM_INTERVAL_MS);
+    });
+  }
+
+  // ── Connection lifecycle ──────────────────────────────────────────────────
+
+  private isOpen(): boolean {
+    return this.socket?.readyState === WebSocket.READY_STATE_OPEN;
+  }
+
+  /** Ensures a connected+authenticated session, connecting if needed. Coalesces concurrent callers onto one attempt. */
+  private async ensureConnected(): Promise<void> {
+    if (this.isOpen() && this.accountId) return;
+    if (this.connecting) return this.connecting;
+    this.connecting = this.connect().finally(() => { this.connecting = null; });
+    return this.connecting;
+  }
+
+  private async connect(): Promise<void> {
+    const [accessToken, accountIdStr] = await Promise.all([
+      this.env.CACHE.get('ctrader:accessToken'),
+      this.env.CACHE.get('ctrader:accountId'),
+    ]);
+    if (!accessToken || !accountIdStr) {
+      throw new Error('cTrader not connected yet — complete OAuth setup at /api/ctrader/connect first');
+    }
+    if (!this.env.CTRADER_CLIENT_ID || !this.env.CTRADER_CLIENT_SECRET) {
+      throw new Error('CTRADER_CLIENT_ID/CTRADER_CLIENT_SECRET not configured');
+    }
+    this.accountId = parseInt(accountIdStr, 10);
+
+    const host = this.env.CTRADER_DEMO === 'true' ? 'demo.ctraderapi.com' : 'live1.p.ctrader.com';
+    const socket = new WebSocket(`wss://${host}:5036`);
+    this.socket = socket;
+    this.symbolCache.clear();
+    this.spotCache.clear();
+    this.subscribedSymbols.clear();
+
+    socket.addEventListener('message', (evt: MessageEvent) => this.handleMessage(evt));
+    socket.addEventListener('close', (evt: CloseEvent) => {
+      console.warn(`[ctrader] closed: code=${evt.code} reason=${evt.reason}`);
+      this.socket = null;
+      this.accountId = null;
+      this.rejectAllPending(new Error('cTrader connection closed'));
+    });
+    socket.addEventListener('error', () => {
+      console.warn('[ctrader] socket error event');
+      this.socket = null;
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('cTrader connect timed out')), 10_000);
+      socket.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
+      socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('cTrader connect failed')); }, { once: true });
+    });
+
+    await this.send(CT_PAYLOAD.APP_AUTH_REQ, {
+      clientId: this.env.CTRADER_CLIENT_ID,
+      clientSecret: this.env.CTRADER_CLIENT_SECRET,
+    });
+    await this.send(CT_PAYLOAD.ACCOUNT_AUTH_REQ, {
+      ctidTraderAccountId: this.accountId,
+      accessToken,
+    });
+    await this.refreshSymbolCache();
+  }
+
+  private rejectAllPending(err: Error): void {
+    for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(err); }
+    this.pending.clear();
+  }
+
+  // ── Request/response correlation ──────────────────────────────────────────
+
+  private send(payloadType: number, payload: Record<string, unknown>, expectResponse = true): Promise<any> {
+    if (!this.socket) return Promise.reject(new Error('cTrader socket not open'));
+    const clientMsgId = crypto.randomUUID();
+    const message = { clientMsgId, payloadType, payload };
+
+    if (!expectResponse) {
+      this.socket.send(JSON.stringify(message));
+      return Promise.resolve(null);
+    }
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(clientMsgId);
+        reject(new Error(`cTrader request timed out (payloadType=${payloadType})`));
+      }, 10_000);
+      this.pending.set(clientMsgId, { resolve, reject, timer });
+      this.socket!.send(JSON.stringify(message));
+    });
+  }
+
+  private handleMessage(evt: MessageEvent): void {
+    let msg: { clientMsgId?: string; payloadType?: number; payload?: any };
+    try {
+      msg = JSON.parse(evt.data as string);
+    } catch {
+      return; // malformed frame — ignore
+    }
+
+    // Unsolicited live price push
+    if (msg.payloadType === CT_PAYLOAD.SPOT_EVENT && msg.payload) {
+      const symbolId = msg.payload.symbolId;
+      if (typeof symbolId === 'number') {
+        const bid = msg.payload.bid != null ? msg.payload.bid / CT_PRICE_SCALE : undefined;
+        const ask = msg.payload.ask != null ? msg.payload.ask / CT_PRICE_SCALE : undefined;
+        const prev = this.spotCache.get(symbolId);
+        this.spotCache.set(symbolId, {
+          bid: bid ?? prev?.bid ?? 0,
+          ask: ask ?? prev?.ask ?? 0,
+          timestamp: Date.now(),
+        });
+      }
+      return;
+    }
+
+    if (!msg.clientMsgId || !this.pending.has(msg.clientMsgId)) return; // event we don't correlate to a request
+    const pending = this.pending.get(msg.clientMsgId)!;
+    this.pending.delete(msg.clientMsgId);
+    clearTimeout(pending.timer);
+
+    if (msg.payloadType === CT_PAYLOAD.ERROR_RES) {
+      pending.reject(new Error(msg.payload?.description ?? msg.payload?.errorCode ?? 'cTrader error'));
+    } else {
+      pending.resolve(msg.payload);
+    }
+  }
+
+  // ── Symbol name <-> numeric ID (cTrader references symbols by ID) ─────────
+
+  private async refreshSymbolCache(): Promise<void> {
+    const res = await this.send(CT_PAYLOAD.SYMBOLS_LIST_REQ, { ctidTraderAccountId: this.accountId });
+    for (const s of res?.symbol ?? []) {
+      if (s.symbolName && typeof s.symbolId === 'number') this.symbolCache.set(s.symbolName, s.symbolId);
+    }
+  }
+
+  private async resolveSymbolId(symbolName: string): Promise<number> {
+    const id = this.symbolCache.get(symbolName);
+    if (id !== undefined) return id;
+    await this.refreshSymbolCache();
+    const retry = this.symbolCache.get(symbolName);
+    if (retry === undefined) throw new Error(`cTrader: unknown symbol "${symbolName}"`);
+    return retry;
+  }
+
+  // ── Alarm: heartbeat + self-heal ────────────────────────────────────────
+
+  async alarm(): Promise<void> {
+    try {
+      if (this.isOpen()) {
+        this.socket!.send(JSON.stringify({ payloadType: CT_PAYLOAD.HEARTBEAT_EVENT, payload: {} }));
+      } else {
+        await this.ensureConnected();
+      }
+    } catch (err) {
+      console.error('[ctrader] alarm reconnect failed:', err);
+    }
+    await this.state.storage.setAlarm(Date.now() + CT_ALARM_INTERVAL_MS);
+  }
+
+  // ── HTTP interface ─────────────────────────────────────────────────────────
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+    try {
+      await this.ensureConnected();
+
+      if (url.pathname === '/price' && request.method === 'GET') {
+        const symbol = url.searchParams.get('symbol');
+        if (!symbol) return json({ error: 'symbol required' }, cors, 400);
+        const symbolId = await this.resolveSymbolId(symbol);
+
+        if (!this.subscribedSymbols.has(symbolId)) {
+          await this.send(CT_PAYLOAD.SUBSCRIBE_SPOTS_REQ, { ctidTraderAccountId: this.accountId, symbolId: [symbolId] });
+          this.subscribedSymbols.add(symbolId);
+        }
+        // Wait briefly for the first spot event if nothing cached yet
+        const deadline = Date.now() + 5000;
+        while (!this.spotCache.has(symbolId) && Date.now() < deadline) {
+          await new Promise(r => setTimeout(r, 250));
+        }
+        const spot = this.spotCache.get(symbolId);
+        if (!spot) return json({ error: 'No price received yet for symbol' }, cors, 504);
+        return json({ symbol, bid: spot.bid, ask: spot.ask, timestamp: spot.timestamp }, cors);
+      }
+
+      if (url.pathname === '/candles' && request.method === 'GET') {
+        const symbol = url.searchParams.get('symbol');
+        const period = (url.searchParams.get('period') ?? 'H1').toUpperCase();
+        const count = Math.min(parseInt(url.searchParams.get('count') ?? '100', 10), 1000);
+        if (!symbol) return json({ error: 'symbol required' }, cors, 400);
+        const symbolId = await this.resolveSymbolId(symbol);
+
+        const res = await this.send(CT_PAYLOAD.GET_TRENDBARS_REQ, {
+          ctidTraderAccountId: this.accountId,
+          symbolId,
+          period,
+          count,
+        });
+        const candles = (res?.trendbar ?? []).map((t: any) => ({
+          timestamp: (t.utcTimestampInMinutes ?? 0) * 60_000,
+          open: (t.low + t.deltaOpen) / CT_PRICE_SCALE,
+          high: (t.low + t.deltaHigh) / CT_PRICE_SCALE,
+          low: t.low / CT_PRICE_SCALE,
+          close: (t.low + t.deltaClose) / CT_PRICE_SCALE,
+          volume: t.volume ?? 0,
+        }));
+        return json({ candles }, cors);
+      }
+
+      if (url.pathname === '/order' && request.method === 'POST') {
+        const body = await request.json() as {
+          symbol: string; side: 'buy' | 'sell'; type: 'market' | 'limit' | 'stop';
+          amount: number; price?: number; stopLossPrice?: number; takeProfitPrice?: number;
+        };
+        const symbolId = await this.resolveSymbolId(body.symbol);
+        const orderType = body.type === 'limit' ? 2 : body.type === 'stop' ? 3 : 1; // MARKET=1 LIMIT=2 STOP=3
+        const payload: Record<string, unknown> = {
+          ctidTraderAccountId: this.accountId,
+          symbolId,
+          orderType,
+          tradeSide: body.side === 'buy' ? 1 : 2, // BUY=1 SELL=2
+          volume: Math.round(body.amount * 100), // centiunits
+        };
+        if (body.price && orderType !== 1) payload.limitPrice = body.price;
+        if (body.stopLossPrice) payload.stopLoss = body.stopLossPrice;
+        if (body.takeProfitPrice) payload.takeProfit = body.takeProfitPrice;
+
+        const res = await this.send(CT_PAYLOAD.NEW_ORDER_REQ, payload);
+        return json({ success: true, result: res }, cors);
+      }
+
+      return json({ error: 'Not found' }, cors, 404);
+    } catch (err: any) {
+      return json({ success: false, error: err?.message ?? 'cTrader request failed' }, cors, 502);
+    }
+  }
+}
+
+// ============================================================================
 // SCHEDULED TASK: Update market data from CoinGecko
 // ============================================================================
 async function updateMarketData(env: Env): Promise<void> {
@@ -788,6 +1108,7 @@ async function runScheduledBots(env: Env): Promise<void> {
       MT5_API_TOKEN: env.MT5_API_TOKEN,
       MT5_ACCOUNT_ID: env.MT5_ACCOUNT_ID,
       MT5_REGION: env.MT5_REGION,
+      CTRADER_SESSION: env.CTRADER_SESSION,
     });
 
     // Run all due bots in parallel; individual failures don't stop others
