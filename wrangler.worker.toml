@@ -3,7 +3,8 @@
 #   - Scheduled market data updates (every 5 minutes)
 #   - Scheduled bot status checks (every minute)
 #   - Durable Objects: TradingEngine, MarketData, ExchangeFeedHub (live
-#     Binance/Coinbase/Kraken WebSocket feeds — see /exchange-feeds routes),
+#     Coinbase/Kraken WebSocket feeds — see /exchange-feeds routes; Binance
+#     is excluded, it blocks Cloudflare Workers' shared egress IPs account-wide),
 #     CTraderSession (persistent cTrader Open API WS connection — one-time
 #     OAuth setup at /api/ctrader/connect on the Pages side)
 #

@@ -278,7 +278,7 @@ export default {
       }, cors);
     }
 
-    // Live Binance/Coinbase/Kraken WebSocket feeds — see ExchangeFeedHub below
+    // Live Coinbase/Kraken WebSocket feeds — see ExchangeFeedHub below
     if (url.pathname === '/exchange-feeds' || url.pathname === '/exchange-feeds/status') {
       const stub = _env.EXCHANGE_FEEDS.get(_env.EXCHANGE_FEEDS.idFromName('hub'));
       const subPath = url.pathname === '/exchange-feeds/status' ? '/status' : '/ticks';
@@ -427,13 +427,24 @@ export class MarketDataStore {
 
 // ============================================================================
 // DURABLE OBJECT: ExchangeFeedHub
-// Holds live outbound WebSocket connections to Binance, Coinbase, and Kraken
-// public ticker feeds (BTC/ETH/SOL). Self-heals via a recurring Alarm, which
-// is what keeps a Durable Object — and the outbound sockets it opened — alive
+// Holds live outbound WebSocket connections to Coinbase and Kraken public
+// ticker feeds (BTC/ETH/SOL). Self-heals via a recurring Alarm, which is
+// what keeps a Durable Object — and the outbound sockets it opened — alive
 // with zero incoming HTTP traffic; a plain fetch()-only DO would be evicted
 // and the connections would die silently.
+//
+// Binance is intentionally NOT included here. Confirmed live (2026-07-23):
+// Binance blocks Cloudflare Workers' shared egress IP range account-wide,
+// for both its WebSocket and plain REST endpoints (403 from Binance's own
+// edge) — a known, permanent block other Cloudflare Workers users have hit
+// and that Binance support has said it will not lift (see
+// https://dev.binance.vision/t/cant-fetch-api-from-cloudflare-worker/3638).
+// It's not fixable from this side; routing around it would require a
+// non-Cloudflare relay (e.g. the AWS Tokyo executor), which is out of scope
+// for this feed. The one D1 bot configured for exchange='binance' is
+// 'stopped' and will fail the same way via its ccxt REST calls if started.
 // ============================================================================
-type FeedExchange = 'binance' | 'coinbase' | 'kraken';
+type FeedExchange = 'coinbase' | 'kraken';
 
 interface FeedConnection {
   socket:        WebSocket | null;
@@ -456,15 +467,14 @@ const ALARM_INTERVAL_MS = 30_000;
 // (100,000 rows/day, account-wide) within hours. In-memory state (below)
 // stays fully live regardless — this only throttles how often a given
 // (exchange, symbol) row is actually written to SQLite storage.
-// 3 exchanges * 3 symbols = 9 keys; at this interval that's a worst-case
-// 9 * (86400 / 15) ≈ 51,800 writes/day, leaving headroom under the cap
+// 2 exchanges * 3 symbols = 6 keys; at this interval that's a worst-case
+// 6 * (86400 / 15) ≈ 34,560 writes/day, leaving headroom under the cap
 // for the other Durable Objects and for adding more feeds later.
 const TICK_PERSIST_INTERVAL_MS = 15_000;
 
 export class ExchangeFeedHub {
   private state: DurableObjectState;
   private connections: Record<FeedExchange, FeedConnection> = {
-    binance:  { socket: null, lastMessageAt: null, reconnects: 0 },
     coinbase: { socket: null, lastMessageAt: null, reconnects: 0 },
     kraken:   { socket: null, lastMessageAt: null, reconnects: 0 },
   };
@@ -503,7 +513,6 @@ export class ExchangeFeedHub {
   // ── Connection management ─────────────────────────────────────────────────
 
   private connectAll(): void {
-    this.connectBinance();
     this.connectCoinbase();
     this.connectKraken();
   }
@@ -534,37 +543,6 @@ export class ExchangeFeedHub {
          price = excluded.price, change_24h = excluded.change_24h, updated_at = excluded.updated_at`,
       exchange, symbol, price, change24h, nowIso,
     );
-  }
-
-  private connectBinance(): void {
-    if (this.isOpen('binance')) return;
-    try {
-      const streams = FEED_SYMBOLS.map(s => `${s.toLowerCase()}usdt@ticker`).join('/');
-      const socket = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-      this.connections.binance.socket = socket;
-
-      socket.addEventListener('message', (evt: MessageEvent) => {
-        try {
-          const payload = JSON.parse(evt.data as string) as {
-            data?: { e?: string; s?: string; c?: string; P?: string };
-          };
-          const d = payload.data;
-          if (d?.e !== '24hrTicker' || !d.s || !d.c) return;
-          const symbol = d.s.replace(/USDT$/, '');
-          this.upsertTick('binance', symbol, parseFloat(d.c), d.P ? parseFloat(d.P) : null);
-        } catch { /* malformed frame — ignore, next tick will arrive */ }
-      });
-      socket.addEventListener('close', (evt: CloseEvent) => {
-        console.warn(`[exchange-feed] binance closed: code=${evt.code} reason=${evt.reason}`);
-        this.connections.binance.socket = null;
-      });
-      socket.addEventListener('error', () => {
-        console.warn('[exchange-feed] binance socket error event');
-        this.connections.binance.socket = null;
-      });
-    } catch (err) {
-      console.error('[exchange-feed] binance connect failed:', err);
-    }
   }
 
   private connectCoinbase(): void {
@@ -649,10 +627,9 @@ export class ExchangeFeedHub {
   // ── Alarm: the self-healing heartbeat ─────────────────────────────────────
 
   async alarm(): Promise<void> {
-    (['binance', 'coinbase', 'kraken'] as FeedExchange[]).forEach(exchange => {
+    (['coinbase', 'kraken'] as FeedExchange[]).forEach(exchange => {
       if (!this.isOpen(exchange)) {
         this.connections[exchange].reconnects += 1;
-        if (exchange === 'binance') this.connectBinance();
         if (exchange === 'coinbase') this.connectCoinbase();
         if (exchange === 'kraken') this.connectKraken();
       }
@@ -686,7 +663,7 @@ export class ExchangeFeedHub {
     if (url.pathname === '/status' && request.method === 'GET') {
       const now = Date.now();
       const status = Object.fromEntries(
-        (['binance', 'coinbase', 'kraken'] as FeedExchange[]).map(exchange => {
+        (['coinbase', 'kraken'] as FeedExchange[]).map(exchange => {
           const c = this.connections[exchange];
           return [exchange, {
             connected: this.isOpen(exchange),
