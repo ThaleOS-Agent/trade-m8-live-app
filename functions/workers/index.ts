@@ -441,8 +441,25 @@ interface FeedConnection {
   reconnects:    number;
 }
 
+interface FeedTick {
+  exchange:   FeedExchange;
+  symbol:     string;
+  price:      number;
+  change_24h: number | null;
+  updated_at: string;
+}
+
 const FEED_SYMBOLS = ['BTC', 'ETH', 'SOL'] as const;
 const ALARM_INTERVAL_MS = 30_000;
+// WS ticker messages can arrive multiple times/sec per symbol; persisting
+// every one blows through the Durable Objects free-tier row-write cap
+// (100,000 rows/day, account-wide) within hours. In-memory state (below)
+// stays fully live regardless — this only throttles how often a given
+// (exchange, symbol) row is actually written to SQLite storage.
+// 3 exchanges * 3 symbols = 9 keys; at this interval that's a worst-case
+// 9 * (86400 / 15) ≈ 51,800 writes/day, leaving headroom under the cap
+// for the other Durable Objects and for adding more feeds later.
+const TICK_PERSIST_INTERVAL_MS = 15_000;
 
 export class ExchangeFeedHub {
   private state: DurableObjectState;
@@ -451,6 +468,10 @@ export class ExchangeFeedHub {
     coinbase: { socket: null, lastMessageAt: null, reconnects: 0 },
     kraken:   { socket: null, lastMessageAt: null, reconnects: 0 },
   };
+  // Latest tick per "exchange:symbol", updated on every WS message (free).
+  private latestTicks = new Map<string, FeedTick>();
+  // Last time each key was actually written to SQLite storage (throttled).
+  private lastPersistedAt = new Map<string, number>();
 
   constructor(state: DurableObjectState, _env: Env) {
     this.state = state;
@@ -465,6 +486,14 @@ export class ExchangeFeedHub {
           PRIMARY KEY (exchange, symbol)
         )
       `);
+      // Warm the in-memory cache from whatever was last persisted, so /ticks
+      // serves sane data immediately after a cold start (DO eviction).
+      const rows = this.state.storage.sql.exec('SELECT * FROM ticks').toArray() as unknown as FeedTick[];
+      for (const row of rows) {
+        const key = `${row.exchange}:${row.symbol}`;
+        this.latestTicks.set(key, row);
+        this.lastPersistedAt.set(key, Date.parse(row.updated_at) || 0);
+      }
       this.connectAll();
       const nextAlarm = await this.state.storage.getAlarm();
       if (!nextAlarm) await this.state.storage.setAlarm(Date.now() + ALARM_INTERVAL_MS);
@@ -484,14 +513,26 @@ export class ExchangeFeedHub {
   }
 
   private upsertTick(exchange: FeedExchange, symbol: string, price: number, change24h: number | null): void {
-    const now = new Date().toISOString();
-    this.connections[exchange].lastMessageAt = Date.now();
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const key = `${exchange}:${symbol}`;
+
+    this.connections[exchange].lastMessageAt = nowMs;
+    // Always keep the in-memory cache current — this is what /ticks serves from.
+    this.latestTicks.set(key, { exchange, symbol, price, change_24h: change24h, updated_at: nowIso });
+
+    // Only persist to SQLite storage at most once per TICK_PERSIST_INTERVAL_MS
+    // per key, to stay well under the Durable Objects row-write cap.
+    const lastPersisted = this.lastPersistedAt.get(key) ?? 0;
+    if (nowMs - lastPersisted < TICK_PERSIST_INTERVAL_MS) return;
+    this.lastPersistedAt.set(key, nowMs);
+
     this.state.storage.sql.exec(
       `INSERT INTO ticks (exchange, symbol, price, change_24h, updated_at)
        VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(exchange, symbol) DO UPDATE SET
          price = excluded.price, change_24h = excluded.change_24h, updated_at = excluded.updated_at`,
-      exchange, symbol, price, change24h, now,
+      exchange, symbol, price, change24h, nowIso,
     );
   }
 
@@ -634,13 +675,12 @@ export class ExchangeFeedHub {
     if (url.pathname === '/ticks' && request.method === 'GET') {
       const exchange = url.searchParams.get('exchange');
       const symbol   = url.searchParams.get('symbol');
-      let query = 'SELECT * FROM ticks WHERE 1=1';
-      const params: string[] = [];
-      if (exchange) { query += ' AND exchange = ?'; params.push(exchange); }
-      if (symbol)   { query += ' AND symbol = ?';   params.push(symbol); }
-      query += ' ORDER BY exchange, symbol';
-      const rows = this.state.storage.sql.exec(query, ...params).toArray();
-      return json({ ticks: rows, timestamp: new Date().toISOString() }, cors);
+      // Served from the in-memory cache (always current) rather than SQLite —
+      // storage writes are throttled, so a live read must not depend on them.
+      const ticks = Array.from(this.latestTicks.values())
+        .filter(t => (!exchange || t.exchange === exchange) && (!symbol || t.symbol === symbol))
+        .sort((a, b) => a.exchange.localeCompare(b.exchange) || a.symbol.localeCompare(b.symbol));
+      return json({ ticks, timestamp: new Date().toISOString() }, cors);
     }
 
     if (url.pathname === '/status' && request.method === 'GET') {
