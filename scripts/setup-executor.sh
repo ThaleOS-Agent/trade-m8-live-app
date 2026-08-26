@@ -11,8 +11,9 @@
 # After running on Mac:
 #   curl http://localhost:8000/health   → should return {"status":"ok",...}
 #
-# After running on Tokyo server, run from your Mac:
-#   bash scripts/setup-executor.sh --set-cloudflare-secrets
+# After running on the executor host, recommended next step:
+#   bash scripts/setup-cloudflare-tunnel.sh --hostname executor.trade-m8.app --write-config
+#   bash scripts/setup-cloudflare-tunnel.sh --hostname executor.trade-m8.app --set-cloudflare-secrets
 # =============================================================================
 
 set -euo pipefail
@@ -32,6 +33,7 @@ PORT=8000
 LOCAL_MODE=false
 SET_CF_SECRETS=false
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PAGES_PROJECT_NAME="${PAGES_PROJECT_NAME:-trade-m8-live-app}"
 
 # ── Parse args ────────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -78,30 +80,39 @@ if [ "$SET_CF_SECRETS" = true ]; then
 
   info "Setting EXECUTOR_URL..."
   if [ -n "${EXECUTOR_URL:-}" ]; then
-    echo "$EXECUTOR_URL" | npx wrangler pages secret put EXECUTOR_URL --project-name=trade-m8-production
+    echo "$EXECUTOR_URL" | npx wrangler pages secret put EXECUTOR_URL --project-name="$PAGES_PROJECT_NAME"
     echo "$EXECUTOR_URL" | npx wrangler secret put EXECUTOR_URL --config "$REPO_DIR/wrangler.worker.toml"
     ok "EXECUTOR_URL set"
   else
     warn "EXECUTOR_URL not in .env — enter it manually:"
-    npx wrangler pages secret put EXECUTOR_URL --project-name=trade-m8-production
+    npx wrangler pages secret put EXECUTOR_URL --project-name="$PAGES_PROJECT_NAME"
     npx wrangler secret put EXECUTOR_URL --config "$REPO_DIR/wrangler.worker.toml"
   fi
 
   info "Setting EXECUTOR_SECRET..."
   if [ -n "${EXECUTOR_SECRET:-}" ]; then
-    echo "$EXECUTOR_SECRET" | npx wrangler pages secret put EXECUTOR_SECRET --project-name=trade-m8-production
+    echo "$EXECUTOR_SECRET" | npx wrangler pages secret put EXECUTOR_SECRET --project-name="$PAGES_PROJECT_NAME"
     echo "$EXECUTOR_SECRET" | npx wrangler secret put EXECUTOR_SECRET --config "$REPO_DIR/wrangler.worker.toml"
     ok "EXECUTOR_SECRET set"
   else
     warn "EXECUTOR_SECRET not in .env — enter it manually:"
-    npx wrangler pages secret put EXECUTOR_SECRET --project-name=trade-m8-production
+    npx wrangler pages secret put EXECUTOR_SECRET --project-name="$PAGES_PROJECT_NAME"
     npx wrangler secret put EXECUTOR_SECRET --config "$REPO_DIR/wrangler.worker.toml"
   fi
 
   info "Setting PAPER_MODE=true..."
-  echo "true" | npx wrangler pages secret put PAPER_MODE --project-name=trade-m8-production
+  echo "true" | npx wrangler pages secret put PAPER_MODE --project-name="$PAGES_PROJECT_NAME"
   echo "true" | npx wrangler secret put PAPER_MODE --config "$REPO_DIR/wrangler.worker.toml"
   ok "PAPER_MODE=true set on both Pages and Worker"
+
+  info "Setting paper-first trading flags..."
+  echo "true" | npx wrangler pages secret put ENABLE_PAPER_TRADING --project-name="$PAGES_PROJECT_NAME"
+  echo "false" | npx wrangler pages secret put ENABLE_LIVE_TRADING --project-name="$PAGES_PROJECT_NAME"
+  echo "true" | npx wrangler pages secret put DEMO_MODE --project-name="$PAGES_PROJECT_NAME"
+  echo "true" | npx wrangler secret put ENABLE_PAPER_TRADING --config "$REPO_DIR/wrangler.worker.toml"
+  echo "false" | npx wrangler secret put ENABLE_LIVE_TRADING --config "$REPO_DIR/wrangler.worker.toml"
+  echo "true" | npx wrangler secret put DEMO_MODE --config "$REPO_DIR/wrangler.worker.toml"
+  ok "ENABLE_PAPER_TRADING=true, ENABLE_LIVE_TRADING=false, DEMO_MODE=true set on Pages and Worker"
 
   echo ""
   echo -e "${GREEN}${BOLD}━━━  Cloudflare secrets configured  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

@@ -1,9 +1,15 @@
 # XQ Trade M8 — Python Executor Deployment Guide
 
+The recommended deployment path is now a self-hosted executor behind a managed
+Cloudflare Tunnel. Railway is no longer assumed. See
+`docs/cloudflare-tunnel-executor.md` for the production route used by the web
+app's current `EXECUTOR_URL` and `EXECUTOR_SECRET` wiring.
+
 ## What this is
 
-The executor is a FastAPI service running on **AWS Tokyo (ap-northeast-1)**
-that provides Python execution capabilities to the Cloudflare Worker.
+The executor is a FastAPI service that provides Python execution capabilities to
+the Cloudflare Worker. It can run on your own host, with Cloudflare Tunnel
+exposing it to the Pages app and Worker.
 
 ```
 Cloudflare Worker (cron every minute)
@@ -164,13 +170,16 @@ sudo systemctl status xq-executor
 
 ## Step 6 — Set secrets in Cloudflare
 
+If you are using a managed Cloudflare Tunnel, set `EXECUTOR_URL` to the tunnel
+hostname, for example `https://executor.trade-m8.app`, not a raw server IP.
+
 ```bash
 # Run these from your local machine (not the server)
 # These connect the Cloudflare Worker to the executor
 
 npx wrangler pages secret put EXECUTOR_URL
-# → Enter: http://<your-executor-ip>:8000
-# → Or use a domain if you have one configured
+# → Enter: https://executor.trade-m8.app
+# → Use the managed Cloudflare Tunnel hostname, not a Quick Tunnel URL
 
 npx wrangler pages secret put EXECUTOR_SECRET
 # → Enter: same value as EXECUTOR_SECRET in .env
@@ -229,10 +238,9 @@ curl https://trade-m8.app/api/executor/health
 
 ## Security notes
 
-- The executor must NOT be publicly accessible — use a firewall rule allowing
-  only Cloudflare Worker egress IPs or a private VPC tunnel
-- Cloudflare publishes its egress IP list at: https://www.cloudflare.com/ips/
-- Add those CIDRs to the AWS Security Group inbound rules for port 8000
+- Prefer a managed Cloudflare Tunnel with the executor bound to `127.0.0.1`
+- Do not use Quick Tunnels for production
+- If you use a raw public IP instead, you must add network controls yourself
 - The `EXECUTOR_SECRET` rotates via `npx wrangler secret put` (no downtime)
 - API credentials are read at request time from environment — not cached
 
