@@ -14,6 +14,7 @@ build/
 # Environment variables
 .env
 .env.local
+.api.env
 .env.development.local
 .env.test.local
 .env.production.local
@@ -25,6 +26,7 @@ wrangler.toml.bak
 # Editor directories
 .vscode/
 .idea/
+.zshrc
 *.swp
 *.swo
 *~
@@ -32,6 +34,8 @@ wrangler.toml.bak
 # OS
 .DS_Store
 Thumbs.db
+__pycache__/
+*.pyc
 
 # Logs
 logs/
@@ -48,6 +52,8 @@ lerna-debug.log*
 .next/
 .nuxt/
 .vercel
+.venv/
+venv/
 
 # Temporary files
 /tmp/
