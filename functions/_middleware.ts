@@ -71,7 +71,9 @@ export async function onRequest(context: any): Promise<Response> {
       path.startsWith('/api/portfolio') ||
       path.startsWith('/api/prices') ||
       path.startsWith('/api/notifications') ||
-      path.startsWith('/api/ctrader')
+      path.startsWith('/api/ctrader') ||
+      path.startsWith('/api/executor') ||
+      path.startsWith('/api/runtime-config')
     ) {
       return next();
     }

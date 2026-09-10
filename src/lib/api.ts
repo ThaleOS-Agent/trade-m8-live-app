@@ -4,6 +4,34 @@ import axios, { AxiosInstance } from 'axios';
 // VITE_API_URL can override for local dev (e.g. http://localhost:8788).
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+export interface RuntimeConfigResponse {
+  trading?: {
+    paperEnabled: boolean;
+    liveEnabled: boolean;
+    demoMode: boolean;
+    executorPaperMode: boolean;
+    effectiveTradingMode: 'paper' | 'live';
+    canActivateLiveTrading: boolean;
+  };
+  services?: {
+    executorConfigured: boolean;
+  };
+  timestamp?: string;
+}
+
+export interface ExecutorHealthResponse {
+  executor_reachable: boolean;
+  executor_url?: string;
+  paper_mode?: boolean;
+  enable_paper_trading?: boolean;
+  enable_live_trading?: boolean;
+  demo_mode?: boolean;
+  message?: string;
+  next_step?: string;
+  error?: string;
+  hint?: string;
+}
+
 class ApiService {
   private client: AxiosInstance;
 
@@ -119,6 +147,16 @@ class ApiService {
   // Health check
   async healthCheck() {
     const { data } = await this.client.get('/api/health');
+    return data;
+  }
+
+  async getRuntimeConfig() {
+    const { data } = await this.client.get<RuntimeConfigResponse>('/api/runtime-config');
+    return data;
+  }
+
+  async getExecutorHealth() {
+    const { data } = await this.client.get<ExecutorHealthResponse>('/api/executor/health');
     return data;
   }
 

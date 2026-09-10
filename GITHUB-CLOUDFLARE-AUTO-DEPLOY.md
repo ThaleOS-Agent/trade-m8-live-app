@@ -49,7 +49,7 @@ Local Changes → GitHub Desktop → GitHub Repo → Cloudflare Pages → Produc
 
 2. **Add the repository:**
    - File → Add Local Repository
-   - Choose folder: `/Users/Gee/trade-m8-live-app`
+   - Choose folder: `<repo-root>`
    - Click "Add Repository"
 
 3. **Publish to GitHub:**

@@ -14,8 +14,8 @@
 ### Step 1: Extract & Install (1 minute)
 ```bash
 # Extract the ZIP file
-unzip xq-trade-m8-cloudflare.zip
-cd xq-trade-m8-cloudflare
+unzip trade-m8-live-app.zip
+cd trade-m8-live-app
 
 # Install dependencies
 npm install

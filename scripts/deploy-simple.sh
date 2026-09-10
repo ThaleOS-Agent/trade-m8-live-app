@@ -5,6 +5,8 @@
 
 set -e
 
+PAGES_PROJECT_NAME="${PAGES_PROJECT_NAME:-trade-m8-live-app}"
+
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -93,14 +95,14 @@ echo ""
 echo -e "${YELLOW}Step 5: Deploy to Cloudflare Pages${NC}"
 echo "Deploying..."
 
-if wrangler pages deploy dist --project-name=xq-trade-m8; then
+if wrangler pages deploy dist --project-name="$PAGES_PROJECT_NAME"; then
     echo -e "${GREEN}✓ Deployment successful!${NC}"
 else
     echo -e "${YELLOW}⚠ First time deployment...${NC}"
     echo "Creating new Pages project..."
-    wrangler pages project create xq-trade-m8 --production-branch=main
+    wrangler pages project create "$PAGES_PROJECT_NAME" --production-branch=main
     echo "Deploying again..."
-    wrangler pages deploy dist --project-name=xq-trade-m8
+    wrangler pages deploy dist --project-name="$PAGES_PROJECT_NAME"
 fi
 
 echo ""
@@ -110,13 +112,19 @@ echo -e "${YELLOW}Step 6: Set Environment Secrets${NC}"
 source .env.local
 
 echo "Setting Supabase URL..."
-echo "$SUPABASE_URL" | wrangler pages secret put SUPABASE_URL --project-name=xq-trade-m8 2>/dev/null || echo "Set manually later"
+echo "$SUPABASE_URL" | wrangler pages secret put SUPABASE_URL --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
 
 echo "Setting Supabase Key..."
-echo "$SUPABASE_ANON_KEY" | wrangler pages secret put SUPABASE_KEY --project-name=xq-trade-m8 2>/dev/null || echo "Set manually later"
+echo "$SUPABASE_ANON_KEY" | wrangler pages secret put SUPABASE_KEY --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
 
 echo "Setting JWT Secret..."
-echo "$JWT_SECRET" | wrangler pages secret put JWT_SECRET --project-name=xq-trade-m8 2>/dev/null || echo "Set manually later"
+echo "$JWT_SECRET" | wrangler pages secret put JWT_SECRET --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
+
+echo "Setting trading mode flags..."
+echo "${ENABLE_PAPER_TRADING:-true}" | wrangler pages secret put ENABLE_PAPER_TRADING --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
+echo "${ENABLE_LIVE_TRADING:-false}" | wrangler pages secret put ENABLE_LIVE_TRADING --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
+echo "${DEMO_MODE:-true}" | wrangler pages secret put DEMO_MODE --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
+echo "${PAPER_MODE:-true}" | wrangler pages secret put PAPER_MODE --project-name="$PAGES_PROJECT_NAME" 2>/dev/null || echo "Set manually later"
 
 echo -e "${GREEN}✓ Secrets configured${NC}"
 
@@ -128,7 +136,7 @@ echo ""
 
 # Get deployment URL
 echo -e "${BLUE}Getting deployment URL...${NC}"
-DEPLOY_URL=$(wrangler pages deployment list --project-name=xq-trade-m8 2>/dev/null | grep "https://" | head -1 | awk '{print $1}' || echo "")
+DEPLOY_URL=$(wrangler pages deployment list --project-name="$PAGES_PROJECT_NAME" 2>/dev/null | grep "https://" | head -1 | awk '{print $1}' || echo "")
 
 if [ ! -z "$DEPLOY_URL" ]; then
     echo -e "${GREEN}🌐 Your app is live at: $DEPLOY_URL${NC}"
@@ -137,7 +145,7 @@ if [ ! -z "$DEPLOY_URL" ]; then
     echo "curl $DEPLOY_URL/api/health"
 else
     echo -e "${YELLOW}Visit Cloudflare Dashboard to get your URL:${NC}"
-    echo "https://dash.cloudflare.com -> Pages -> xq-trade-m8"
+    echo "https://dash.cloudflare.com -> Pages -> $PAGES_PROJECT_NAME"
 fi
 
 echo ""
@@ -146,7 +154,7 @@ echo "1. Visit your application URL"
 echo "2. Login with: demo@xqtradem8.com / demo123"
 echo "3. Test the trading dashboard"
 echo "4. Add CoinGecko API key for market data:"
-echo "   wrangler pages secret put COINGECKO_API_KEY --project-name=xq-trade-m8"
+echo "   wrangler pages secret put COINGECKO_API_KEY --project-name=$PAGES_PROJECT_NAME"
 echo ""
 echo -e "${YELLOW}⚠️ Important: Start with DEMO mode only!${NC}"
 echo ""

@@ -34,7 +34,7 @@ echo "👤 GitHub user: $USERNAME"
 echo ""
 
 # Repository details
-REPO_NAME="xq-trade-m8-cloudflare"
+REPO_NAME="trade-m8-live-app"
 REPO_DESC="XQ Trade M8 - AI-Powered Trading Platform with CoinGecko Integration (Cloudflare Pages + D1)"
 
 # Check if repository exists

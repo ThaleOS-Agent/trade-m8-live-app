@@ -113,7 +113,7 @@ Your XQ Trade M8 platform now includes comprehensive production-ready trading fu
 ### 🏗️ Architecture
 
 ```
-xq-trade-m8-cloudflare/
+trade-m8-live-app/
 ├── functions/                    # Cloudflare Workers backend
 │   ├── api/
 │   │   └── live-trading.ts      # Live trading endpoints

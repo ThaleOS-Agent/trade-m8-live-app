@@ -1,0 +1,9 @@
+tunnel: a55d59d9-4f3a-4182-a222-0d3f2a37118b
+credentials-file: /etc/cloudflared/a55d59d9-4f3a-4182-a222-0d3f2a37118b.json
+
+ingress:
+  - hostname: executor.trade-m8.app.thaleos.network
+    service: http://127.0.0.1:8000
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404

@@ -28,7 +28,7 @@ git
 
 ### 1.1 Clone and Install
 ```bash
-cd /Users/Gee/trade-m8-live-app
+cd "$(git rev-parse --show-toplevel)"
 npm install
 ```
 

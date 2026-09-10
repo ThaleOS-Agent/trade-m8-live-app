@@ -247,7 +247,7 @@ COINGECKO_API_URL = https://api.coingecko.com/api/v3
 
 ### Step 3: Create CoinGecko Service
 
-Create file: `/Users/Gee/xq-trade-m8-cloudflare/functions/lib/coingecko-service.ts`
+Create file: `<repo-root>/functions/lib/coingecko-service.ts`
 
 ```typescript
 /**
@@ -445,7 +445,7 @@ export default CoinGeckoService;
 
 ### Step 4: Add Endpoints to Your Backend
 
-Update `/Users/Gee/xq-trade-m8-cloudflare/functions/_middleware.ts`:
+Update `<repo-root>/functions/_middleware.ts`:
 
 ```typescript
 import CoinGeckoService from './lib/coingecko-service';

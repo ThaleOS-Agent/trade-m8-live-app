@@ -20,6 +20,9 @@ interface Env {
   EXECUTOR_URL:    string;
   EXECUTOR_SECRET: string;
   PAPER_MODE:      string;
+  ENABLE_PAPER_TRADING?: string;
+  ENABLE_LIVE_TRADING?: string;
+  DEMO_MODE?: string;
 }
 
 const cors = {
@@ -47,6 +50,9 @@ async function proxyToExecutor(
       error:          'Executor not configured',
       executor_url:   'not-configured',
       paper_mode:     true,
+      enable_paper_trading: true,
+      enable_live_trading: false,
+      demo_mode: true,
       fix:            'Set EXECUTOR_URL via: npx wrangler pages secret put EXECUTOR_URL',
     }, 503);
   }
@@ -78,6 +84,9 @@ async function proxyToExecutor(
       executor_reachable: false,
       executor_url:       env.EXECUTOR_URL ? 'configured' : 'not-configured',
       paper_mode:         env.PAPER_MODE !== 'false',
+      enable_paper_trading: env.ENABLE_PAPER_TRADING !== 'false',
+      enable_live_trading: env.ENABLE_LIVE_TRADING === 'true',
+      demo_mode:         env.DEMO_MODE !== 'false',
       error:              timedOut ? 'Executor timeout (8s)' : String(err?.message ?? err),
       hint:               timedOut
         ? 'Executor is not running or firewall is blocking the connection'
@@ -104,6 +113,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         executor_reachable: false,
         executor_url:       'not-configured',
         paper_mode:         true,
+        enable_paper_trading: true,
+        enable_live_trading: false,
+        demo_mode: true,
         message:            'Executor not yet deployed. See executor/DEPLOYMENT.md',
         next_step:          'npx wrangler pages secret put EXECUTOR_URL --project-name=<project>',
       });

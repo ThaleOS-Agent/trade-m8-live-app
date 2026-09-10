@@ -48,7 +48,7 @@ Error code: 9109 - "Cannot use the access token from location"
    - Navigate to: Workers & Pages
    - Click: "Create application" > "Pages" > "Upload assets"
    - Project name: `xq-trade-m8`
-   - Upload all files from: `/Users/Gee/xq-trade-m8-cloudflare/dist/`
+   - Upload all files from: `<repo-root>/dist/`
    - Click: "Deploy site"
 
 2. **Create D1 Database:**
@@ -58,7 +58,7 @@ Error code: 9109 - "Cannot use the access token from location"
    - Name: `xq-trade-m8-db`
    - Click: "Create"
    - Go to database > Console
-   - Copy and paste the contents of `/Users/Gee/xq-trade-m8-cloudflare/database/schema.sql`
+   - Copy and paste the contents of `<repo-root>/database/schema.sql`
    - Execute
 
 3. **Create KV Namespaces:**
@@ -74,8 +74,8 @@ Error code: 9109 - "Cannot use the access token from location"
    - Add production variables:
      ```
      SUPABASE_URL = https://eeotzybkdjvorpxqgezz.supabase.co
-     SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlb3R6eWJrZGp2b3JweHFnZXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NjQ1MDksImV4cCI6MjA4NjE0MDUwOX0.5VEHBoHPCsBPQn0FwPglgj3GzAPbsiDzIuKVSClUB3U
-     JWT_SECRET = 83fb2608-846e-41d0-a66a-7d94503f1b3f
+     SUPABASE_KEY = YOUR_SUPABASE_ANON_KEY
+     JWT_SECRET = YOUR_RANDOM_32_PLUS_CHAR_SECRET
      SUPABASE_SERVICE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlb3R6eWJrZGp2b3JweHFnZXp6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDU2NDUwOSwiZXhwIjoyMDg2MTQwNTA5fQ.HIP1k0O_IurVhxBu_EYneHxpAh5MLqty8iCRTe2_F3w
      ```
    - Click: "Save"

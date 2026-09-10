@@ -29,7 +29,7 @@
 
 4. **Run setup:**
    ```bash
-   cd /Users/Gee/xq-trade-m8-cloudflare
+   cd "$(git rev-parse --show-toplevel)"
    ./database-setup.sh
    ```
 
@@ -49,13 +49,13 @@
 
 1. Click on `trade-m8-db` database
 2. Go to **"Console"** tab
-3. Copy the entire contents of `/Users/Gee/xq-trade-m8-cloudflare/COPY-THIS-TO-D1.sql`
+3. Copy the entire contents of `<repo-root>/COPY-THIS-TO-D1.sql`
 4. Paste into the console
 5. Click **"Execute"**
 
 #### Step 3: Update wrangler.toml
 
-Edit `/Users/Gee/xq-trade-m8-cloudflare/wrangler.toml` and replace the D1 section:
+Edit `<repo-root>/wrangler.toml` and replace the D1 section:
 
 ```toml
 # D1 Database binding
@@ -108,7 +108,7 @@ Add these secrets:
 #### Step 7: Deploy
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 npm run build
 wrangler pages deploy dist --project-name=trade-m8-production
 ```

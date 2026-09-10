@@ -161,6 +161,21 @@ fi
 hdr "STEP 2 — Virtual Environment"
 
 VENV_DIR="$REPO_DIR/.venv"
+VENV_PYTHON="$VENV_DIR/bin/python"
+VENV_PIP="$VENV_DIR/bin/pip"
+
+venv_is_healthy() {
+  [ -x "$VENV_PYTHON" ] || return 1
+  "$VENV_PYTHON" -c "import sys; print(sys.version)" >/dev/null 2>&1 || return 1
+  [ -x "$VENV_PIP" ] || return 1
+  "$VENV_PIP" --version >/dev/null 2>&1 || return 1
+  return 0
+}
+
+if [ -d "$VENV_DIR" ] && ! venv_is_healthy; then
+  warn "Existing venv is stale or broken. Recreating it for the current repo path."
+  rm -rf "$VENV_DIR"
+fi
 
 if [ ! -d "$VENV_DIR" ]; then
   info "Creating venv at $VENV_DIR..."
@@ -191,9 +206,9 @@ info "Installing from executor/requirements.txt..."
 if [ "$LOCAL_MODE" = true ]; then
   warn "LOCAL mode: skipping torch (large). Install manually if running backtest endpoint."
   grep -v "^torch" "$REQUIREMENTS" > /tmp/req_no_torch.txt
-  pip install --quiet -r /tmp/req_no_torch.txt
+  python -m pip install --quiet -r /tmp/req_no_torch.txt
 else
-  pip install --quiet -r "$REQUIREMENTS"
+  python -m pip install --quiet -r "$REQUIREMENTS"
 fi
 
 ok "Dependencies installed"

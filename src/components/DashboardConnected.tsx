@@ -13,7 +13,7 @@ import { TradingBot, Trade, Portfolio } from '../types';
 
 const DashboardConnected = () => {
   const { user, logout, token } = useAuth() as any;
-  const { setMode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const { setMode, isPaperTrading, isLiveTrading, runtimeConfig, runtimeServices, liveActivationBlockedReason } = useTradingMode();
   const navigate = useNavigate();
 
   const [portfolio, setPortfolio] = useState<Portfolio>({
@@ -208,19 +208,31 @@ const DashboardConnected = () => {
               </button>
               <button
                 onClick={() => {
+                  if (!runtimeConfig.canActivateLiveTrading) {
+                    alert(liveActivationBlockedReason || 'Live trading is currently unavailable.');
+                    return;
+                  }
                   if (confirm('⚠️ Switch to LIVE TRADING? This uses real money.\n\nEnsure you have configured exchange API keys and tested your strategies in paper mode.')) {
                     setMode('live');
                   }
                 }}
+                disabled={!runtimeConfig.canActivateLiveTrading}
                 className={`text-[11px] font-semibold px-3 py-1 rounded-md transition-all ${
                   isLiveTrading
                     ? 'bg-red-600 text-white shadow-sm animate-pulse'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : runtimeConfig.canActivateLiveTrading
+                      ? 'text-slate-400 hover:text-slate-200'
+                      : 'text-slate-500 cursor-not-allowed opacity-60'
                 }`}
               >
                 LIVE
               </button>
             </div>
+            {!runtimeConfig.canActivateLiveTrading && (
+              <div className="hidden md:block text-[11px] text-amber-300/90">
+                {liveActivationBlockedReason}
+              </div>
+            )}
 
             {/* Connect Wallet */}
             {walletInfo ? (
@@ -297,6 +309,33 @@ const DashboardConnected = () => {
 
       {/* Main Content */}
       <main className="relative max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {runtimeServices.executorStatus !== 'ready' && (
+          <section className={`glass-card p-5 border ${
+            runtimeServices.executorStatus === 'not_configured'
+              ? 'border-amber-500/30 bg-amber-500/10'
+              : 'border-red-500/30 bg-red-500/10'
+          }`}>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                  Execution Readiness
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-white">
+                  {runtimeServices.executorStatus === 'not_configured'
+                    ? 'Executor deployment is not configured'
+                    : 'Executor deployment is not reachable'}
+                </h2>
+                <p className="mt-2 text-sm text-slate-200">
+                  {runtimeServices.executorMessage}
+                </p>
+              </div>
+              <div className="text-sm text-slate-300">
+                Paper trading remains available. Live execution stays blocked until the executor is deployed and reachable.
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Stats Overview */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {statCards.map((card, idx) => (

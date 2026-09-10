@@ -215,7 +215,7 @@ curl "https://trade-m8.app/api/market-analysis?coinId=bitcoin&days=14"
 3. **Run the test suite:**
 
 ```bash
-cd /Users/Gee/trade-m8-live-app
+cd "$(git rev-parse --show-toplevel)"
 bash scripts/test-production.sh
 ```
 

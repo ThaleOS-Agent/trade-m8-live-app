@@ -53,9 +53,9 @@ I've prepared everything for deployment:
 ```
 SUPABASE_URL = https://eeotzybkdjvorpxqgezz.supabase.co
 
-SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlb3R6eWJrZGp2b3JweHFnZXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NjQ1MDksImV4cCI6MjA4NjE0MDUwOX0.5VEHBoHPCsBPQn0FwPglgj3GzAPbsiDzIuKVSClUB3U
+SUPABASE_KEY = YOUR_SUPABASE_ANON_KEY
 
-JWT_SECRET = 83fb2608-846e-41d0-a66a-7d94503f1b3f
+JWT_SECRET = YOUR_RANDOM_32_PLUS_CHAR_SECRET
 ```
 
 4. Click: **Save**
@@ -126,7 +126,7 @@ Should return:
 
 ## 📊 Files Ready for Deployment
 
-Located in: `/Users/Gee/xq-trade-m8-cloudflare/`
+Located in: `<repo-root>/`
 
 - **dist/** - Built application (upload this)
 - **database/schema.sql** - Database schema (copy-paste into D1 console)

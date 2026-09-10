@@ -1,0 +1,343 @@
+# ThaleOS Trading Unified - Prometheus Alert Rules
+# Critical alerts for production trading platform
+
+groups:
+  # System Health Alerts
+  - name: system.health
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"thaleos-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "ThaleOS service is down"
+          description: "Service {{ $labels.job }} on instance {{ $labels.instance }} has been down for more than 1 minute."
+          runbook_url: "https://docs.thaleos.network/runbooks/service-down"
+
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes{job=~"thaleos-.*"} / 1024 / 1024) > 512
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Service {{ $labels.job }} is using {{ $value }}MB of memory, above 512MB threshold."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes * 100) < 10
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Disk space critically low"
+          description: "Filesystem {{ $labels.mountpoint }} has less than 10% free space remaining."
+
+  # API Performance Alerts
+  - name: api.performance
+    interval: 15s
+    rules:
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="thaleos-trading-api"}[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API latency is high"
+          description: "95th percentile latency is {{ $value }}s, above 1s threshold for 2 minutes."
+
+      - alert: HighErrorRate
+        expr: (rate(http_requests_total{job="thaleos-trading-api",status=~"5.."}[5m]) / rate(http_requests_total{job="thaleos-trading-api"}[5m]) * 100) > 5
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ $value }}%, above 5% threshold."
+          runbook_url: "https://docs.thaleos.network/runbooks/high-error-rate"
+
+      - alert: APIRequestRateDrop
+        expr: rate(http_requests_total{job="thaleos-trading-api"}[5m]) < 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API request rate unusually low"
+          description: "API is receiving {{ $value }} requests/second, which may indicate an issue."
+
+      - alert: TooManyRequests
+        expr: rate(http_requests_total{job="thaleos-trading-api",status="429"}[1m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High rate limiting activity"
+          description: "Rate limiting is active with {{ $value }} requests/second being rejected."
+
+  # Trading System Alerts
+  - name: trading.system
+    interval: 15s
+    rules:
+      - alert: OrderExecutionDelayed
+        expr: histogram_quantile(0.95, rate(thaleos_order_execution_duration_seconds_bucket[5m])) > 5.0
+        for: 2m
+        labels:
+          severity: critical
+          component: trading
+        annotations:
+          summary: "Order execution is slow"
+          description: "95th percentile order execution time is {{ $value }}s, above 5s threshold."
+          runbook_url: "https://docs.thaleos.network/runbooks/slow-orders"
+
+      - alert: TradingVolumeAnomaly
+        expr: abs((sum(rate(thaleos_trading_volume_usd[1h])) - sum(rate(thaleos_trading_volume_usd[1h] offset 1h))) / sum(rate(thaleos_trading_volume_usd[1h] offset 1h)) * 100) > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "Unusual trading volume detected"
+          description: "Trading volume has changed by {{ $value }}% compared to the previous hour."
+
+      - alert: FailedTradesHigh
+        expr: rate(thaleos_trades_total{status="failed"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "High rate of failed trades"
+          description: "{{ $value }} trades per second are failing."
+
+      - alert: ExchangeConnectivityIssue
+        expr: thaleos_exchange_health_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: exchange
+        annotations:
+          summary: "Exchange connectivity lost"
+          description: "Connection to exchange {{ $labels.exchange }} has been lost."
+          runbook_url: "https://docs.thaleos.network/runbooks/exchange-down"
+
+  # Database Alerts
+  - name: database.alerts
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_activity_count{job="postgres-exporter"} > 80
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database connection count"
+          description: "Database has {{ $value }} active connections, approaching limit."
+
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database queries are slow"
+          description: "95th percentile query time is {{ $value }}s, above 1s threshold."
+
+      - alert: DatabaseDeadlocks
+        expr: increase(pg_stat_database_deadlocks[5m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database deadlocks detected"
+          description: "{{ $value }} deadlocks occurred in the last 5 minutes."
+
+      - alert: DatabaseReplicationLag
+        expr: pg_stat_replication_lag_seconds > 60
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database replication lag high"
+          description: "Replication lag is {{ $value }}s, above 60s threshold."
+
+  # WebSocket Alerts  
+  - name: websocket.alerts
+    interval: 15s
+    rules:
+      - alert: WebSocketConnectionsHigh
+        expr: thaleos_websocket_connections_active > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "{{ $value }} active WebSocket connections, approaching capacity."
+
+      - alert: WebSocketMessageLatency
+        expr: histogram_quantile(0.95, rate(thaleos_websocket_message_duration_seconds_bucket[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "WebSocket message latency high"
+          description: "95th percentile WebSocket message latency is {{ $value }}s."
+
+      - alert: WebSocketDisconnectionsHigh
+        expr: rate(thaleos_websocket_disconnections_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          component: websocket
+        annotations:
+          summary: "High WebSocket disconnection rate"
+          description: "{{ $value }} WebSocket disconnections per second."
+
+  # Security Alerts
+  - name: security.alerts
+    interval: 30s
+    rules:
+      - alert: SuspiciousLoginActivity
+        expr: rate(thaleos_login_attempts_total{status="failed"}[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High failed login attempts"
+          description: "{{ $value }} failed login attempts per second."
+
+      - alert: UnauthorizedAPIAccess
+        expr: rate(http_requests_total{job="thaleos-trading-api",status="401"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High unauthorized access attempts"
+          description: "{{ $value }} unauthorized API requests per second."
+
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 0s
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} seconds (less than 7 days)."
+
+  # ML System Alerts
+  - name: ml.alerts
+    interval: 60s
+    rules:
+      - alert: MLModelPredictionLatency
+        expr: histogram_quantile(0.95, rate(thaleos_ml_prediction_duration_seconds_bucket[5m])) > 2.0
+        for: 3m
+        labels:
+          severity: warning
+          component: ml
+        annotations:
+          summary: "ML prediction latency high"
+          description: "95th percentile ML prediction time is {{ $value }}s, above 2s threshold."
+
+      - alert: MLModelAccuracyDrop
+        expr: thaleos_ml_model_accuracy < 0.75
+        for: 5m
+        labels:
+          severity: warning
+          component: ml
+        annotations:
+          summary: "ML model accuracy dropped"
+          description: "ML model {{ $labels.model_name }} accuracy is {{ $value }}, below 75% threshold."
+
+      - alert: MLTrainingJobFailed
+        expr: increase(thaleos_ml_training_jobs_total{status="failed"}[1h]) > 0
+        for: 0s
+        labels:
+          severity: warning
+          component: ml
+        annotations:
+          summary: "ML training job failed"
+          description: "ML training job for model {{ $labels.model_name }} failed."
+
+  # Business Metrics Alerts
+  - name: business.alerts
+    interval: 300s  # 5 minute interval for business metrics
+    rules:
+      - alert: DailyVolumeTarget
+        expr: sum(increase(thaleos_trading_volume_usd[24h])) < 1000000
+        for: 0s
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "Daily volume below target"
+          description: "24-hour trading volume is ${{ $value }}, below $1M target."
+
+      - alert: ActiveUsersLow
+        expr: thaleos_active_users < 100
+        for: 10m
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "Active user count low"
+          description: "Only {{ $value }} active users, below normal levels."
+
+      - alert: RevenueAnomalyDetected
+        expr: abs((sum(rate(thaleos_revenue_usd[1h])) - sum(rate(thaleos_revenue_usd[1h] offset 24h))) / sum(rate(thaleos_revenue_usd[1h] offset 24h)) * 100) > 30
+        for: 15m
+        labels:
+          severity: info
+          component: business
+        annotations:
+          summary: "Revenue anomaly detected"
+          description: "Hourly revenue has changed by {{ $value }}% compared to the same time yesterday."
+
+  # Infrastructure Alerts
+  - name: infrastructure.alerts
+    interval: 60s
+    rules:
+      - alert: CloudflareRateLimiting
+        expr: increase(cloudflare_requests_total{status="429"}[5m]) > 100
+        for: 1m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Cloudflare rate limiting active"
+          description: "{{ $value }} requests rate limited by Cloudflare in last 5 minutes."
+
+      - alert: CDNErrorRateHigh
+        expr: (rate(cloudflare_requests_total{status=~"5.."}[5m]) / rate(cloudflare_requests_total[5m]) * 100) > 1
+        for: 2m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "CDN error rate high"
+          description: "CDN error rate is {{ $value }}%, above 1% threshold."
+
+      - alert: WorkerExecutionTimeHigh
+        expr: histogram_quantile(0.95, rate(cloudflare_worker_duration_seconds_bucket[5m])) > 5.0
+        for: 2m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "Cloudflare Worker execution time high"
+          description: "95th percentile worker execution time is {{ $value }}s, approaching 10s limit."

@@ -52,7 +52,7 @@ Follow these 3 simple steps:
 **Time**: 1 minute
 
 ### Step 2: Update Configuration
-Edit `/Users/Gee/xq-trade-m8-cloudflare/wrangler.toml`:
+Edit `<repo-root>/wrangler.toml`:
 
 ```toml
 [[d1_databases]]
@@ -65,7 +65,7 @@ database_id = "paste-your-id-here"
 
 ### Step 3: Initialize Schema
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 wrangler d1 execute trade-m8-db --file=schema-to-copy.sql
 ```
 
@@ -192,7 +192,7 @@ wrangler d1 execute trade-m8-db --command="SELECT email FROM users"
 → Go to D1 section and use web console
 
 ### Issue: Schema file not found
-**Solution**: Check path: `/Users/Gee/xq-trade-m8-cloudflare/schema-to-copy.sql`
+**Solution**: Check path: `<repo-root>/schema-to-copy.sql`
 
 ---
 

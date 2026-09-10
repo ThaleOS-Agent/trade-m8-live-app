@@ -59,7 +59,7 @@ The XQ Trade M8 application has a **perfectly synchronized** backend and fronten
 | `daily_performance` | ✅ Schema Ready | Daily P&L | /api/analytics |
 
 ### Schema File Location
-- **Source**: `/Users/Gee/xq-trade-m8-cloudflare/COPY-THIS-TO-D1.sql`
+- **Source**: `<repo-root>/COPY-THIS-TO-D1.sql`
 - **Lines**: 367 lines of complete SQL schema
 - **Status**: ✅ Ready to execute
 

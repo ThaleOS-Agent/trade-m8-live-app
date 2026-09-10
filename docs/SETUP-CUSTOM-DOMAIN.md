@@ -180,7 +180,7 @@ If `trade-m8.app` is already in your Cloudflare account, you can add it via CLI:
 
 ```bash
 export NODE_TLS_REJECT_UNAUTHORIZED=0
-export CLOUDFLARE_API_TOKEN="kae7k3KJvSdETK77zsSJ3oRaJSEVrqoPQcVQZ3B8"
+export CLOUDFLARE_API_TOKEN="YOUR_CLOUDFLARE_API_TOKEN"
 
 # Add custom domain
 wrangler pages domain add trade-m8 trade-m8.app
@@ -279,7 +279,7 @@ If your app references the domain:
 2. Redeploy if needed:
    ```bash
    export NODE_TLS_REJECT_UNAUTHORIZED=0
-   export CLOUDFLARE_API_TOKEN="kae7k3KJvSdETK77zsSJ3oRaJSEVrqoPQcVQZ3B8"
+   export CLOUDFLARE_API_TOKEN="YOUR_CLOUDFLARE_API_TOKEN"
    wrangler pages deploy dist --project-name=trade-m8
    ```
 

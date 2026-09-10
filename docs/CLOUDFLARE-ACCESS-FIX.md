@@ -109,7 +109,7 @@ Cloudflare Access is an enterprise security feature that requires authentication
 Once Access is disabled:
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 
 # Test CoinGecko endpoints
 ./test-coingecko-endpoints.sh https://86fc1ece.trade-m8-production.pages.dev

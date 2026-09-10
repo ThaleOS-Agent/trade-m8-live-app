@@ -43,6 +43,7 @@ Options:
   --port <port>                   Local executor port behind cloudflared (default: 8000)
   --tunnel-id <uuid>              Optional. Used to fill the config template.
   --tunnel-token <token>          Optional. Used to print the install command.
+  --executor-secret <secret>      Optional. Uses this secret for Cloudflare.
   --write-config                  Write executor/cloudflare/cloudflared-config.yml
   --set-cloudflare-secrets        Push EXECUTOR_URL / EXECUTOR_SECRET / paper flags
   --pages-project <name>          Override Pages project name
@@ -59,6 +60,7 @@ while [[ $# -gt 0 ]]; do
     --port) PORT="$2"; shift ;;
     --tunnel-id) TUNNEL_ID="$2"; shift ;;
     --tunnel-token) TUNNEL_TOKEN="$2"; shift ;;
+    --executor-secret) EXECUTOR_SECRET_VALUE="$2"; shift ;;
     --write-config) WRITE_CONFIG=true ;;
     --set-cloudflare-secrets) SET_CF_SECRETS=true ;;
     --pages-project) PAGES_PROJECT_NAME="$2"; shift ;;
@@ -109,6 +111,12 @@ if [ "$SET_CF_SECRETS" = true ]; then
     # shellcheck disable=SC1091
     source "$REPO_DIR/.env" 2>/dev/null || true
     EXECUTOR_SECRET_VALUE="${EXECUTOR_SECRET:-}"
+  fi
+
+  if [ -z "$EXECUTOR_SECRET_VALUE" ]; then
+    warn "EXECUTOR_SECRET not found in environment or .env"
+    read -r -s -p "Enter EXECUTOR_SECRET: " EXECUTOR_SECRET_VALUE
+    echo ""
   fi
 
   [ -n "$EXECUTOR_SECRET_VALUE" ] || fail "EXECUTOR_SECRET is required to push Cloudflare secrets"

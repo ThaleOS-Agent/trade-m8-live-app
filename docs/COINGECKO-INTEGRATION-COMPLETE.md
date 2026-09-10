@@ -303,7 +303,7 @@ HTTP/2 302  ← Redirects to Cloudflare Access login
 Run comprehensive test suite:
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 ./test-coingecko-endpoints.sh
 ```
 

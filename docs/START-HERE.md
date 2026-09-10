@@ -26,7 +26,7 @@ https://dash.cloudflare.com/e0b57c607cc62ffd3f409df4f0f7c0f9/workers-and-pages/d
 2. Click **"Console"** tab
 3. Copy ALL contents from this file:
    ```
-   /Users/Gee/xq-trade-m8-cloudflare/COPY-THIS-TO-D1.sql
+   <repo-root>/COPY-THIS-TO-D1.sql
    ```
 4. Paste into console
 5. Click **"Execute"**
@@ -38,7 +38,7 @@ https://dash.cloudflare.com/e0b57c607cc62ffd3f409df4f0f7c0f9/workers-and-pages/d
 
 **Edit this file:**
 ```
-/Users/Gee/xq-trade-m8-cloudflare/wrangler.toml
+<repo-root>/wrangler.toml
 ```
 
 **Find lines 23-26 and uncomment + update:**
@@ -57,7 +57,7 @@ database_id = "PASTE-YOUR-DATABASE-ID-HERE"
 ### ✅ Done! Now Deploy:
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 npm run build
 wrangler pages deploy dist --project-name=trade-m8-production
 ```

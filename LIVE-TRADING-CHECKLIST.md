@@ -3,7 +3,7 @@
 ## Current Status: READY FOR PAPER TRADING ✅
 
 **Your Platform:** https://trade-m8.app
-**GitHub:** https://github.com/ThaleOS-Agent/xq-trade-m8-cloudflare
+**GitHub:** https://github.com/ThaleOS-Agent/trade-m8-live-app
 
 ---
 
@@ -164,7 +164,7 @@ When ready for real money:
 ### For Paper Trading (Safe - Recommended First):
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 
 # Add Binance testnet keys
 echo "BLkD3r6prLMIojYxAAw0CsErUcMnhj7McuJ5XMiNjEOCIvowpo3LKYkHiCEBj9Kp" | \

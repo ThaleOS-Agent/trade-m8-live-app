@@ -37,7 +37,7 @@ Error: `Authentication error [code: 10000]`
 
 3. Open this file in a text editor:
    ```
-   /Users/Gee/xq-trade-m8-cloudflare/COPY-THIS-TO-D1.sql
+   <repo-root>/COPY-THIS-TO-D1.sql
    ```
 
 4. Copy ALL the contents (Cmd+A, Cmd+C)
@@ -52,7 +52,7 @@ Error: `Authentication error [code: 10000]`
 
 1. Open this file:
    ```
-   /Users/Gee/xq-trade-m8-cloudflare/wrangler.toml
+   <repo-root>/wrangler.toml
    ```
 
 2. Find lines 23-26 (currently commented out):
@@ -76,7 +76,7 @@ Error: `Authentication error [code: 10000]`
 ### Step 4: Build & Deploy (30 seconds)
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 npm run build
 wrangler pages deploy dist --project-name=trade-m8-production
 ```
@@ -119,7 +119,7 @@ wrangler pages deploy dist --project-name=trade-m8-production
 
 ### Step 2: Update .env.local
 
-1. Open `/Users/Gee/xq-trade-m8-cloudflare/.env.local`
+1. Open `<repo-root>/.env.local`
 
 2. Find line 8:
    ```bash
@@ -136,7 +136,7 @@ wrangler pages deploy dist --project-name=trade-m8-production
 ### Step 3: Test Token
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 export NODE_TLS_REJECT_UNAUTHORIZED=0
 export CLOUDFLARE_API_TOKEN="YOUR_NEW_TOKEN"
 wrangler d1 list
@@ -147,7 +147,7 @@ You should see a list of databases (or empty list if none exist yet).
 ### Step 4: Run Setup Script
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 chmod +x database-setup.sh
 ./database-setup.sh
 ```

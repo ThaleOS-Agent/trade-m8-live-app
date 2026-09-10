@@ -18,7 +18,7 @@ Your API token needs D1 database permissions. Here are two options:
 7. **Copy the Database ID** shown on the page
 
 ### Step 2: Update wrangler.toml
-Edit `/Users/Gee/xq-trade-m8-cloudflare/wrangler.toml`:
+Edit `<repo-root>/wrangler.toml`:
 
 Uncomment and update these lines:
 ```toml
@@ -30,7 +30,7 @@ database_id = "YOUR_DATABASE_ID_HERE"  # Paste the ID from step 1
 
 ### Step 3: Initialize Database Schema
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 
 # Run the schema file
 wrangler d1 execute trade-m8-db --file=schema-to-copy.sql

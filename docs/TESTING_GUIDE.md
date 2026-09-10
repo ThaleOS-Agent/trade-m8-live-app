@@ -31,7 +31,7 @@ If you want full authentication to work, initialize the D1 database:
 
 ### Step 1: List Your D1 Databases
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 wrangler d1 list
 ```
 

@@ -93,7 +93,7 @@ Create a service token to bypass Access programmatically:
 Once Cloudflare Access is configured, run the comprehensive test suite:
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 ./test-coingecko-endpoints.sh https://ae5fc56f.trade-m8-production.pages.dev
 ```
 

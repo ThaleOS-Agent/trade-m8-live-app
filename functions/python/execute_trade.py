@@ -56,6 +56,17 @@ TWAP_DURATION_S     = int(os.getenv("TWAP_DURATION_S",     "300"))     # 5 min d
 MAX_RETRIES         = int(os.getenv("EXEC_MAX_RETRIES",    "3"))
 MAX_POSITION_USD    = float(os.getenv("MAX_POSITION_USD",  "50000"))   # hard cap
 
+def _env_true(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() == "true"
+
+def _effective_paper_mode() -> bool:
+    enable_live_trading = _env_true("ENABLE_LIVE_TRADING", False)
+    demo_mode = _env_true("DEMO_MODE", True)
+    return PAPER_MODE or not enable_live_trading or demo_mode
+
 # ─── Binance credentials ──────────────────────────────────────────────────────
 _BINANCE_KEY    = os.getenv("BINANCE_API_KEY", "")
 _BINANCE_SECRET = os.getenv("BINANCE_SECRET",  "")
@@ -375,7 +386,7 @@ def execute_trade(
         )
 
     # Paper mode
-    if PAPER_MODE:
+    if _effective_paper_mode():
         exch = exchange or _route(symbol)
         return _paper_fill(symbol, side, amount, price, exch)
 

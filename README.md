@@ -85,7 +85,7 @@ trade-m8-live-app/
 
 ### 1. Install Dependencies
 ```bash
-cd /Users/Gee/trade-m8-live-app
+cd "$(git rev-parse --show-toplevel)"
 npm install
 ```
 

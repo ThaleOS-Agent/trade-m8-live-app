@@ -202,7 +202,7 @@ wrangler pages deploy dist
 ## 📦 Updated Files
 
 ```
-xq-trade-m8-cloudflare/
+trade-m8-live-app/
 ├── postcss.config.js ← NEW! (Fixed Tailwind)
 ├── tailwind.config.js ✓ (Already correct)
 ├── src/styles/index.css ✓ (Already correct)

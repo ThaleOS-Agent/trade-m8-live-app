@@ -8,9 +8,9 @@
 
 ### 1. Project Cleanup ✅
 - ✅ Removed duplicate directories (618 MB freed)
-  - Deleted: `/Users/Gee/xq-trade-m8`
-  - Moved to trash: `/Users/Gee/xq-trade-m8-cloudflare`
-- ✅ Single active directory: `/Users/Gee/trade-m8-live-app`
+  - Deleted legacy local folder: `xq-trade-m8`
+  - Moved to trash: `<repo-root>`
+- ✅ Single active directory: `<repo-root>`
 
 ### 2. Custom Domain ✅
 - ✅ Domain: `https://trade-m8.app`
@@ -71,7 +71,7 @@
 
 **Checklist:**
 - [ ] Open GitHub Desktop
-- [ ] Add local repository: `/Users/Gee/trade-m8-live-app`
+- [ ] Add local repository: `<repo-root>`
 - [ ] Publish to GitHub (PRIVATE repository)
 - [ ] Commit current changes
 - [ ] Push to GitHub
@@ -356,4 +356,3 @@ After completing these steps, you'll have a **fully automated deployment pipelin
 **Last Updated:** 2026-02-16
 **Project:** XQ Trade M8 - AI-Powered Trading Platform
 **Status:** Production Ready (pending final configuration)
-

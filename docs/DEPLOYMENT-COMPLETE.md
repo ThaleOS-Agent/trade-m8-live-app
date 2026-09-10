@@ -48,7 +48,7 @@ To enable login and database features, complete these quick steps:
    - Click on the database you just created
    - Click: **Console** tab at the top
    - Open this file on your computer:
-     `/Users/Gee/xq-trade-m8-cloudflare/database/schema.sql`
+     `<repo-root>/database/schema.sql`
    - Copy **ALL** the contents (323 lines)
    - Paste into the D1 Console
    - Click: **Execute** button
@@ -124,7 +124,7 @@ After adding the database binding and environment variables, redeploy to load th
 **Option B - Via CLI:**
 ```bash
 export NODE_TLS_REJECT_UNAUTHORIZED=0
-export CLOUDFLARE_API_TOKEN="kae7k3KJvSdETK77zsSJ3oRaJSEVrqoPQcVQZ3B8"
+export CLOUDFLARE_API_TOKEN="YOUR_CLOUDFLARE_API_TOKEN"
 wrangler pages deploy dist --project-name=xq-trade-m8
 ```
 

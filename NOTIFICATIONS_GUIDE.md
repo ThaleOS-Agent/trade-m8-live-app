@@ -56,7 +56,7 @@ Or use the Cloudflare Dashboard:
 ### 2. Deploy the Updated Code
 
 ```bash
-cd /Users/Gee/trade-m8-live-app
+cd "$(git rev-parse --show-toplevel)"
 npm run build
 wrangler pages deploy dist
 ```

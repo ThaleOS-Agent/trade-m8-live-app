@@ -7,7 +7,7 @@ Since you cannot install Xcode command line tools, here's how to upload your cod
 ### Step 1: Create Repository on GitHub
 
 1. Go to: https://github.com/new
-2. **Repository name:** `xq-trade-m8-cloudflare`
+2. **Repository name:** `trade-m8-live-app`
 3. **Description:** `XQ Trade M8 - AI-Powered Trading Platform with CoinGecko Integration`
 4. **Visibility:** Choose Private or Public
 5. **DO NOT** check "Initialize this repository with:"
@@ -19,11 +19,11 @@ Since you cannot install Xcode command line tools, here's how to upload your cod
 ### Step 2: Create ZIP Archive
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
-zip -r xq-trade-m8-cloudflare.zip . -x "*.git*" -x "node_modules/*" -x "dist/*" -x ".wrangler/*" -x ".DS_Store"
+cd "$(git rev-parse --show-toplevel)"
+zip -r trade-m8-live-app.zip . -x "*.git*" -x "node_modules/*" -x "dist/*" -x ".wrangler/*" -x ".DS_Store"
 ```
 
-This creates: `/Users/Gee/xq-trade-m8-cloudflare.zip`
+This creates: `<repo-root>.zip`
 
 ### Step 3: Upload via GitHub Web
 
@@ -37,7 +37,7 @@ This creates: `/Users/Gee/xq-trade-m8-cloudflare.zip`
 **Option B: Use GitHub Desktop (Easier)**
 1. Download GitHub Desktop: https://desktop.github.com/
 2. Open GitHub Desktop
-3. File → Add Local Repository → Choose `/Users/Gee/xq-trade-m8-cloudflare`
+3. File → Add Local Repository → Choose `<repo-root>`
 4. Click "Create a repository" if not initialized
 5. Click "Publish repository" to push to GitHub
 
@@ -55,14 +55,14 @@ Follow the prompts to authenticate.
 
 ### Step 2: Create Repository via API
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 
 # Create private repository
 gh api \
   --method POST \
   -H "Accept: application/vnd.github+json" \
   /user/repos \
-  -f name='xq-trade-m8-cloudflare' \
+  -f name='trade-m8-live-app' \
   -f description='XQ Trade M8 - AI-Powered Trading Platform with CoinGecko Integration' \
   -f private=true
 ```
@@ -185,7 +185,7 @@ After uploading, your repository should have:
 - Test suites
 - Database schema
 
-Visit: `https://github.com/YOUR_USERNAME/xq-trade-m8-cloudflare`
+Visit: `https://github.com/YOUR_USERNAME/trade-m8-live-app`
 
 ---
 

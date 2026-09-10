@@ -5,6 +5,8 @@
 
 set -e  # Exit on error
 
+PAGES_PROJECT_NAME="${PAGES_PROJECT_NAME:-trade-m8-live-app}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -184,7 +186,7 @@ set_secret_if_exists() {
     local SECRET_VALUE=$2
     
     if [ ! -z "$SECRET_VALUE" ]; then
-        echo "$SECRET_VALUE" | wrangler secret put "$SECRET_NAME" --quiet 2>/dev/null || true
+        echo "$SECRET_VALUE" | wrangler pages secret put "$SECRET_NAME" --project-name="$PAGES_PROJECT_NAME" --quiet 2>/dev/null || true
         print_success "Secret set: $SECRET_NAME"
     fi
 }
@@ -193,6 +195,10 @@ set_secret_if_exists "SUPABASE_URL" "$SUPABASE_URL"
 set_secret_if_exists "SUPABASE_KEY" "$SUPABASE_ANON_KEY"
 set_secret_if_exists "JWT_SECRET" "$JWT_SECRET"
 set_secret_if_exists "COINGECKO_API_KEY" "$COINGECKO_API_KEY"
+set_secret_if_exists "ENABLE_PAPER_TRADING" "${ENABLE_PAPER_TRADING:-true}"
+set_secret_if_exists "ENABLE_LIVE_TRADING" "${ENABLE_LIVE_TRADING:-false}"
+set_secret_if_exists "DEMO_MODE" "${DEMO_MODE:-true}"
+set_secret_if_exists "PAPER_MODE" "${PAPER_MODE:-true}"
 
 print_header "Step 9: Build Frontend"
 
@@ -209,7 +215,7 @@ print_success "Workers deployed"
 print_header "Step 11: Deploy Cloudflare Pages"
 
 print_info "Deploying Pages..."
-wrangler pages deploy dist --project-name=xq-trade-m8
+wrangler pages deploy dist --project-name="$PAGES_PROJECT_NAME"
 print_success "Pages deployed"
 
 print_header "Step 12: Health Check"
@@ -218,7 +224,7 @@ print_info "Waiting for deployment to propagate (10 seconds)..."
 sleep 10
 
 # Get deployment URL
-DEPLOYMENT_URL=$(wrangler pages deployment list --project-name=xq-trade-m8 | grep "https" | head -n1 | awk '{print $1}')
+DEPLOYMENT_URL=$(wrangler pages deployment list --project-name="$PAGES_PROJECT_NAME" | grep "https" | head -n1 | awk '{print $1}')
 
 if [ ! -z "$DEPLOYMENT_URL" ]; then
     print_info "Testing deployment at: $DEPLOYMENT_URL"

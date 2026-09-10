@@ -9,7 +9,7 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const { setMode, isPaperTrading, isLiveTrading } = useTradingMode();
+  const { setMode, isPaperTrading, isLiveTrading, runtimeConfig, runtimeServices, liveActivationBlockedReason } = useTradingMode();
   const [activeTab, setActiveTab] = useState<'trading' | 'profile' | 'api' | 'notifications' | 'security'>('trading');
 
   const [profile, setProfile] = useState({
@@ -105,6 +105,42 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                     Switch between paper trading (simulated) and live trading (real money)
                   </p>
 
+                  <div className="glass-inner p-4 border border-slate-700/50 bg-slate-900/40">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-white">Deployment Readiness</h4>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Runtime gates are evaluated from deployed config and executor health.
+                        </p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        runtimeServices.executorStatus === 'ready'
+                          ? 'bg-emerald-500/20 text-emerald-300'
+                          : runtimeServices.executorStatus === 'not_configured'
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : 'bg-red-500/20 text-red-300'
+                      }`}>
+                        {runtimeServices.executorStatus === 'ready'
+                          ? 'Executor Ready'
+                          : runtimeServices.executorStatus === 'not_configured'
+                            ? 'Executor Missing'
+                            : 'Executor Unreachable'}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-300">
+                      <div className="glass-inner p-3">
+                        <p>Paper trading: {runtimeConfig.paperEnabled ? 'enabled' : 'disabled'}</p>
+                        <p>Live trading flag: {runtimeConfig.liveEnabled ? 'enabled' : 'disabled'}</p>
+                        <p>Demo mode: {runtimeConfig.demoMode ? 'enabled' : 'disabled'}</p>
+                      </div>
+                      <div className="glass-inner p-3">
+                        <p>Executor configured: {runtimeServices.executorConfigured ? 'yes' : 'no'}</p>
+                        <p>Executor reachable: {runtimeServices.executorReachable ? 'yes' : 'no'}</p>
+                        <p>{runtimeServices.executorMessage}</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     {/* Paper Trading Option */}
                     <div
@@ -153,6 +189,10 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                     {/* Live Trading Option */}
                     <div
                       onClick={() => {
+                        if (!runtimeConfig.canActivateLiveTrading) {
+                          alert(liveActivationBlockedReason || 'Live trading is currently unavailable.');
+                          return;
+                        }
                         if (confirm('⚠️ IMPORTANT: Switching to LIVE TRADING mode will use REAL MONEY.\n\nMake sure you:\n✓ Have configured your exchange API keys\n✓ Understand the risks involved\n✓ Have tested your strategies in paper mode\n\nDo you want to continue?')) {
                           setMode('live');
                         }
@@ -160,7 +200,9 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                       className={`glass-inner p-5 cursor-pointer transition-all duration-200 ${
                         isLiveTrading
                           ? 'bg-red-600/20 border-2 border-red-500/50 ring-2 ring-red-500/20'
-                          : 'border border-slate-700/50 hover:bg-slate-700/30'
+                          : runtimeConfig.canActivateLiveTrading
+                            ? 'border border-slate-700/50 hover:bg-slate-700/30'
+                            : 'border border-slate-800/60 opacity-60'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -179,6 +221,11 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                           <p className="text-sm text-slate-300 mb-3">
                             Trade with real money on connected exchanges. Use with caution.
                           </p>
+                          {!runtimeConfig.canActivateLiveTrading && (
+                            <p className="text-xs text-amber-300 mb-3">
+                              {liveActivationBlockedReason}
+                            </p>
+                          )}
                           <ul className="text-xs text-slate-400 space-y-1">
                             <li>• Real money trading</li>
                             <li>• Actual profit and loss</li>
@@ -264,8 +311,13 @@ const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Exchange API Keys</h3>
                   <p className="text-sm text-slate-400 mb-4">
-                    Connect your exchange accounts for live trading
+                    Credential management is not persisted by this UI. Use backend secrets and server-side storage only.
                   </p>
+                  <div className="glass-inner p-4 mb-4 border border-amber-500/30 bg-amber-500/10">
+                    <p className="text-sm text-amber-200">
+                      Do not enter production broker credentials here yet. This form is a local placeholder and is not wired to secure backend storage.
+                    </p>
+                  </div>
                   <div className="space-y-4">
                     <div className="glass-inner p-4">
                       <h4 className="font-semibold mb-3">Binance</h4>

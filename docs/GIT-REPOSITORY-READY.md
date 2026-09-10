@@ -2,12 +2,12 @@
 
 ## 🎉 Repository is Live!
 
-**Repository URL:** https://github.com/ThaleOS-Agent/xq-trade-m8-cloudflare
+**Repository URL:** https://github.com/ThaleOS-Agent/trade-m8-live-app
 
 **Status:**
 ✅ Repository created
 ✅ README.md uploaded
-✅ ZIP package created: `/Users/Gee/xq-trade-m8-upload.zip`
+✅ ZIP package created: `trade-m8-live-app.zip`
 
 ---
 
@@ -16,7 +16,7 @@
 ### Option 1: GitHub Web Interface (Easiest - No Tools Required)
 
 1. **Open your repository:**
-   https://github.com/ThaleOS-Agent/xq-trade-m8-cloudflare
+   https://github.com/ThaleOS-Agent/trade-m8-live-app
 
 2. **Click "uploading an existing file"**
 
@@ -47,8 +47,8 @@
 
 1. **Extract the ZIP:**
    ```bash
-   cd /Users/Gee
-   unzip xq-trade-m8-upload.zip -d xq-upload-temp
+   cd "$HOME"
+   unzip trade-m8-live-app.zip -d trade-m8-upload-temp
    ```
 
 2. **Use GitHub Desktop:**
@@ -69,7 +69,7 @@
 brew install git
 
 # Then run our setup script
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 ./git-setup.sh
 ```
 
@@ -121,7 +121,7 @@ cd /Users/Gee/xq-trade-m8-cloudflare
 3. **Select "Connect to Git"**
 
 4. **Choose your repository:**
-   - Select `ThaleOS-Agent/xq-trade-m8-cloudflare`
+   - Select `ThaleOS-Agent/trade-m8-live-app`
 
 5. **Configure build settings:**
    ```
@@ -178,7 +178,7 @@ cd /Users/Gee/xq-trade-m8-cloudflare
 
 ## 🔗 Important Links
 
-**Repository:** https://github.com/ThaleOS-Agent/xq-trade-m8-cloudflare
+**Repository:** https://github.com/ThaleOS-Agent/trade-m8-live-app
 **Production:** https://1018557f.trade-m8-production.pages.dev
 **Cloudflare Dashboard:** https://dash.cloudflare.com/e0b57c607cc62ffd3f409df4f0f7c0f9
 

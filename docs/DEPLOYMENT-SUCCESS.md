@@ -312,7 +312,7 @@ View at: Pages → trade-m8 → Analytics
 - Pages Functions: https://developers.cloudflare.com/pages/functions
 
 ### Local Files:
-- `/Users/Gee/xq-trade-m8-cloudflare/` - Project root
+- `<repo-root>/` - Project root
 - `dist/` - Built frontend
 - `functions/` - API functions
 - `database/schema.sql` - Database schema

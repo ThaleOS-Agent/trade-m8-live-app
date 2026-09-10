@@ -1,0 +1,613 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ThaleOS Trading - System Overview",
+    "tags": ["thaleos", "trading", "production"],
+    "style": "dark",
+    "timezone": "UTC",
+    "refresh": "30s",
+    "schemaVersion": 39,
+    "version": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Status Overview",
+        "type": "stat",
+        "gridPos": {
+          "h": 6,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "up{job=\"thaleos-trading\"}",
+            "legendFormat": "System Status",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "none",
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "DOWN"
+                  },
+                  "1": {
+                    "text": "UP"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          },
+          "orientation": "horizontal",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 2,
+        "title": "API Response Time",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"thaleos-trading\"}[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"thaleos-trading\"}[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "visible",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Request Rate",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        },
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"thaleos-trading\"}[5m])",
+            "legendFormat": "{{method}} {{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "reqps"
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "visible",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"thaleos-trading\",status=~\"5..\"}[5m]) / rate(http_requests_total{job=\"thaleos-trading\"}[5m]) * 100",
+            "legendFormat": "5xx Error Rate",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"thaleos-trading\",status=~\"4..\"}[5m]) / rate(http_requests_total{job=\"thaleos-trading\"}[5m]) * 100",
+            "legendFormat": "4xx Error Rate",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "percent",
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          }
+        },
+        "alert": {
+          "conditions": [
+            {
+              "query": {
+                "params": ["A", "1m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "2m",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 5,
+        "title": "Active Trading Sessions",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "thaleos_active_sessions",
+            "legendFormat": "Active Sessions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 500
+                },
+                {
+                  "color": "red",
+                  "value": 1000
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Daily Trading Volume",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 14
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(thaleos_trading_volume_usd[24h]))",
+            "legendFormat": "24h Volume",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                }
+              ]
+            },
+            "unit": "currencyUSD"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": ["lastNotNull"]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Database Performance",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(database_query_duration_seconds_bucket{job=\"thaleos-trading\"}[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(database_connections_active{job=\"thaleos-trading\"}[5m])",
+            "legendFormat": "Active Connections",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 22
+        },
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"thaleos-trading\"} / 1024 / 1024",
+            "legendFormat": "Memory Usage (MB)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "MB"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "WebSocket Connections",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 30
+        },
+        "targets": [
+          {
+            "expr": "thaleos_websocket_connections_active",
+            "legendFormat": "Active WebSocket Connections",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Order Execution Time",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 30
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(thaleos_order_execution_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(thaleos_order_execution_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Exchange Health Status",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 38
+        },
+        "targets": [
+          {
+            "expr": "thaleos_exchange_health_status",
+            "legendFormat": "",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            },
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "options": {
+          "showHeader": true
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "__name__": true,
+                "Time": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "exchange": "Exchange",
+                "Value": "Status"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Trading Pair Performance",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 46
+        },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (symbol) (increase(thaleos_trades_total[1h])))",
+            "legendFormat": "",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "showHeader": true
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "__name__": true,
+                "Time": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "symbol": "Trading Pair",
+                "Value": "Trades (1h)"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        },
+        {
+          "datasource": "prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname!=\"\"}",
+          "iconColor": "red",
+          "name": "Alerts",
+          "titleFormat": "{{alertname}}",
+          "textFormat": "{{instance}}: {{summary}}"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": "prometheus",
+          "definition": "label_values(up{job=\"thaleos-trading\"}, instance)",
+          "hide": 0,
+          "includeAll": true,
+          "multi": true,
+          "name": "instance",
+          "options": [],
+          "query": {
+            "query": "label_values(up{job=\"thaleos-trading\"}, instance)",
+            "refId": "StandardVariableQuery"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        }
+      ]
+    },
+    "links": [
+      {
+        "icon": "external link",
+        "tags": [],
+        "title": "ThaleOS Trading Platform",
+        "tooltip": "Open trading platform",
+        "type": "link",
+        "url": "https://trading.thaleos.network"
+      },
+      {
+        "icon": "cloud",
+        "tags": [],
+        "title": "Cloudflare Dashboard",
+        "tooltip": "View Cloudflare metrics",
+        "type": "link",
+        "url": "https://dash.cloudflare.com"
+      }
+    ]
+  }
+}

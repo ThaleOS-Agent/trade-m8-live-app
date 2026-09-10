@@ -37,7 +37,7 @@ This complete production package contains everything needed to deploy XQ Trade M
 
 ```bash
 # 1. Extract package
-cd xq-trade-m8-cloudflare
+cd trade-m8-live-app
 
 # 2. Install dependencies
 npm install
@@ -172,20 +172,20 @@ Before deployment, get these API keys:
 ### Step 1: Download & Extract
 ```bash
 # You already have the package at:
-# /home/claude/xq-trade-m8-cloudflare/
+# /home/claude/trade-m8-live-app/
 
 # To create ZIP for download:
 cd /home/claude
-zip -r xq-trade-m8-cloudflare.zip xq-trade-m8-cloudflare/ \
+zip -r trade-m8-live-app.zip trade-m8-live-app/ \
   -x "*/node_modules/*" "*/dist/*" "*/.git/*"
 
 # ZIP file ready at:
-# /home/claude/xq-trade-m8-cloudflare.zip
+# /home/claude/trade-m8-live-app.zip
 ```
 
 ### Step 2: Install Dependencies
 ```bash
-cd xq-trade-m8-cloudflare
+cd trade-m8-live-app
 npm install
 ```
 

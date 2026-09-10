@@ -131,7 +131,7 @@ curl https://3ca60de6.trade-m8-production.pages.dev/api/health
 
 ### Test 2: Complete Test Suite
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 ./test-all-endpoints.sh https://trade-m8.app
 ```
 **Expected:** All tests pass ✅

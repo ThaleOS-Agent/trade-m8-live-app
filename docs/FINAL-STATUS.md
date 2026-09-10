@@ -42,7 +42,7 @@ Add these 3 bindings:
 
 Add for Production:
 ```
-JWT_SECRET = 83fb2608-846e-41d0-a66a-7d94503f1b3f (Encrypt ✓)
+JWT_SECRET = YOUR_RANDOM_32_PLUS_CHAR_SECRET (Encrypt ✓)
 SUPABASE_URL = https://eeotzybkdjvorpxqgezz.supabase.co (Encrypt ✓)
 SUPABASE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (Encrypt ✓)
 ```
@@ -244,7 +244,7 @@ https://dash.cloudflare.com/e0b57c607cc62ffd3f409df4f0f7c0f9/pages/view/trade-m8
 
 **Follow this guide:**
 ```
-/Users/Gee/xq-trade-m8-cloudflare/STEP-BY-STEP-BINDINGS.md
+<repo-root>/STEP-BY-STEP-BINDINGS.md
 ```
 
 **Takes 5 minutes. Then you're done!** 🚀

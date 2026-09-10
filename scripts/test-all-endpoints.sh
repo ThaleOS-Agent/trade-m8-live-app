@@ -170,5 +170,5 @@ else
     echo "3. Start creating trading bots"
 fi
 echo ""
-echo "Full Setup Guide: /Users/Gee/xq-trade-m8-cloudflare/COMPLETE-SETUP-GUIDE.md"
+echo "Full Setup Guide: <repo-root>/COMPLETE-SETUP-GUIDE.md"
 echo ""

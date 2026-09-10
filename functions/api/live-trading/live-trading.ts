@@ -52,6 +52,9 @@ interface Env {
   DB: D1Database;
   JWT_SECRET: string;
   COINGECKO_API_KEY: string;
+  ENABLE_PAPER_TRADING?: string;
+  ENABLE_LIVE_TRADING?: string;
+  DEMO_MODE?: string;
   // Binance
   BINANCE_API_KEY: string;
   BINANCE_SECRET_KEY: string;
@@ -103,10 +106,30 @@ interface Env {
   FINNHUB_API_KEY: string;
 }
 
+function isTrue(value?: string): boolean {
+  return value === 'true';
+}
+
+function getTradingGate(env: Env) {
+  const paperEnabled = env.ENABLE_PAPER_TRADING !== 'false';
+  const liveEnabled = isTrue(env.ENABLE_LIVE_TRADING);
+  const demoMode = env.DEMO_MODE !== 'false';
+  const effectiveMode = liveEnabled && !demoMode ? 'live' : 'paper';
+
+  return {
+    paperEnabled,
+    liveEnabled,
+    demoMode,
+    effectiveMode,
+    liveAllowed: liveEnabled && !demoMode,
+  };
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
   const path = url.pathname;
+  const tradingGate = getTradingGate(env);
 
   // CORS headers
   const corsHeaders = {
@@ -133,6 +156,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     // Route to appropriate handler
     if (path.includes('/api/live-trading/execute')) {
+      if (!tradingGate.liveAllowed) {
+        return jsonResponse({
+          error: 'Live trading is disabled',
+          effectiveMode: tradingGate.effectiveMode,
+          paperEnabled: tradingGate.paperEnabled,
+          liveEnabled: tradingGate.liveEnabled,
+          demoMode: tradingGate.demoMode,
+          message: 'Deployment is locked to paper trading until live activation gates are opened.',
+        }, corsHeaders, 403);
+      }
       return await handleTradeExecution(request, env, userData.userId, corsHeaders);
     }
 
@@ -149,6 +182,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     if (path.includes('/api/live-trading/ai-execute')) {
+      if (!tradingGate.liveAllowed) {
+        return jsonResponse({
+          error: 'Live trading is disabled',
+          effectiveMode: tradingGate.effectiveMode,
+          paperEnabled: tradingGate.paperEnabled,
+          liveEnabled: tradingGate.liveEnabled,
+          demoMode: tradingGate.demoMode,
+          message: 'Deployment is locked to paper trading until live activation gates are opened.',
+        }, corsHeaders, 403);
+      }
       return await handleAIEnhancedTrading(request, env, userData.userId, corsHeaders);
     }
 

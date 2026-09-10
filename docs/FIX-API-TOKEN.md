@@ -129,7 +129,7 @@ After fixing, you can test if it works:
 
 ```bash
 export NODE_TLS_REJECT_UNAUTHORIZED=0
-export CLOUDFLARE_API_TOKEN="AORTqhg7G1ehTJL07Gf7__j8Q5h7IpMgS8mfU7Az"
+export CLOUDFLARE_API_TOKEN="YOUR_CLOUDFLARE_API_TOKEN"
 wrangler whoami
 ```
 

@@ -90,7 +90,7 @@ if command -v gh &> /dev/null; then
         visibility="--public"
     fi
 
-    gh repo create xq-trade-m8-cloudflare $visibility \
+    gh repo create trade-m8-live-app $visibility \
         --source=. \
         --description="XQ Trade M8 - AI-Powered Trading Platform with CoinGecko Integration (Cloudflare Pages + D1)" \
         --push
@@ -106,14 +106,14 @@ else
     echo ""
     echo "Please create a repository manually:"
     echo "1. Go to https://github.com/new"
-    echo "2. Name: xq-trade-m8-cloudflare"
+    echo "2. Name: trade-m8-live-app"
     echo "3. Description: XQ Trade M8 - AI-Powered Trading Platform with CoinGecko Integration"
     echo "4. Choose Private or Public"
     echo "5. DO NOT initialize with README, .gitignore, or license"
     echo "6. Click 'Create repository'"
     echo ""
     echo "Then run these commands:"
-    echo "   git remote add origin https://github.com/YOUR_USERNAME/xq-trade-m8-cloudflare.git"
+    echo "   git remote add origin https://github.com/YOUR_USERNAME/trade-m8-live-app.git"
     echo "   git branch -M main"
     echo "   git push -u origin main"
 fi

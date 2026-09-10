@@ -162,7 +162,7 @@ https://dash.cloudflare.com/e0b57c607cc62ffd3f409df4f0f7c0f9/pages/view/trade-m8
 ### Wait 2 minutes for automatic redeploy, then run:
 
 ```bash
-cd /Users/Gee/xq-trade-m8-cloudflare
+cd "$(git rev-parse --show-toplevel)"
 ./test-production.sh https://trade-m8.app
 ```
 

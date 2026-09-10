@@ -486,7 +486,7 @@ Alert me via email if:
 ### Quick Start
 ```bash
 # 1. Open terminal
-cd xq-trade-m8-cloudflare
+cd trade-m8-live-app
 
 # 2. Start Claude Code
 claude code

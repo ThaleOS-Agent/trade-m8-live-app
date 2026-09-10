@@ -118,7 +118,7 @@ curl https://trade-m8.app/api/health
 
 curl "https://trade-m8.app/api/market-analysis?coinId=bitcoin&days=14"
 
-cd /Users/Gee/trade-m8-live-app && bash scripts/test-production.sh
+cd "$(git rev-parse --show-toplevel)" && bash scripts/test-production.sh
 
 
 ═══════════════════════════════════════════════════════════════

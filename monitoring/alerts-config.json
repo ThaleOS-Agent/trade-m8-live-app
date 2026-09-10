@@ -1,0 +1,173 @@
+{
+  "alerting": {
+    "name": "ThaleOS Trading Network Alerts",
+    "description": "Production monitoring and alerting configuration",
+    "channels": {
+      "email": {
+        "enabled": true,
+        "recipients": ["admin@teakanetwork.com", "alerts@thaleos.network"],
+        "smtp": {
+          "host": "smtp.sendgrid.net",
+          "port": 587,
+          "username": "apikey",
+          "password": "${SENDGRID_API_KEY}"
+        }
+      },
+      "webhook": {
+        "enabled": true,
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "format": "slack"
+      },
+      "discord": {
+        "enabled": false,
+        "webhook_url": "https://discord.com/api/webhooks/YOUR/DISCORD/WEBHOOK"
+      }
+    },
+    "rules": [
+      {
+        "name": "Worker Down",
+        "condition": "worker_status != 'healthy'",
+        "severity": "critical",
+        "channels": ["email", "webhook"],
+        "description": "Cloudflare Worker is not responding or unhealthy"
+      },
+      {
+        "name": "High Error Rate",
+        "condition": "error_rate > 1.0",
+        "severity": "warning",
+        "channels": ["webhook"],
+        "description": "API error rate exceeds 1%"
+      },
+      {
+        "name": "High Latency",
+        "condition": "avg_response_time > 500",
+        "severity": "warning",
+        "channels": ["webhook"],
+        "description": "Average API response time exceeds 500ms"
+      },
+      {
+        "name": "Trading Volume Drop",
+        "condition": "trading_volume_1h < trading_volume_avg_24h * 0.1",
+        "severity": "warning",
+        "channels": ["email"],
+        "description": "Trading volume dropped significantly"
+      },
+      {
+        "name": "Failed Trade Rate High",
+        "condition": "failed_trade_rate > 5.0",
+        "severity": "critical",
+        "channels": ["email", "webhook"],
+        "description": "Trade failure rate exceeds 5%"
+      },
+      {
+        "name": "Exchange Connection Lost",
+        "condition": "exchange_connection_status == 'disconnected'",
+        "severity": "warning",
+        "channels": ["email", "webhook"],
+        "description": "Lost connection to one or more exchanges"
+      },
+      {
+        "name": "SSL Certificate Expiring",
+        "condition": "ssl_days_until_expiry < 30",
+        "severity": "warning",
+        "channels": ["email"],
+        "description": "SSL certificate expires within 30 days"
+      },
+      {
+        "name": "Memory Usage High",
+        "condition": "memory_usage > 80",
+        "severity": "warning",
+        "channels": ["webhook"],
+        "description": "Worker memory usage exceeds 80%"
+      },
+      {
+        "name": "Rate Limit Exceeded",
+        "condition": "rate_limit_hits > 100",
+        "severity": "warning",
+        "channels": ["webhook"],
+        "description": "Rate limiting triggered frequently"
+      },
+      {
+        "name": "Database Connection Issues",
+        "condition": "db_connection_errors > 10",
+        "severity": "critical",
+        "channels": ["email", "webhook"],
+        "description": "Multiple database connection failures"
+      }
+    ],
+    "schedules": {
+      "health_check": {
+        "interval": "30s",
+        "endpoints": [
+          "https://thaleos-trading-network-prod.thaleos-app.workers.dev/api/health",
+          "https://api.thaleos.network/health"
+        ]
+      },
+      "performance_check": {
+        "interval": "5m",
+        "metrics": [
+          "response_time",
+          "error_rate",
+          "throughput"
+        ]
+      },
+      "business_metrics": {
+        "interval": "15m",
+        "metrics": [
+          "trading_volume",
+          "active_users",
+          "trade_success_rate"
+        ]
+      }
+    },
+    "thresholds": {
+      "response_time": {
+        "warning": 200,
+        "critical": 500
+      },
+      "error_rate": {
+        "warning": 0.5,
+        "critical": 2.0
+      },
+      "memory_usage": {
+        "warning": 70,
+        "critical": 85
+      },
+      "trade_success_rate": {
+        "warning": 98.0,
+        "critical": 95.0
+      }
+    }
+  },
+  "monitoring": {
+    "dashboards": [
+      {
+        "name": "System Overview",
+        "url": "/monitoring/dashboard.html",
+        "refresh_interval": 30,
+        "panels": [
+          "system_health",
+          "api_performance",
+          "trading_metrics",
+          "infrastructure_status"
+        ]
+      },
+      {
+        "name": "Trading Performance",
+        "url": "/monitoring/trading-dashboard.html",
+        "refresh_interval": 10,
+        "panels": [
+          "trade_volume",
+          "order_book",
+          "exchange_status",
+          "profit_loss"
+        ]
+      }
+    ],
+    "metrics_retention": {
+      "high_frequency": "7d",
+      "medium_frequency": "30d",
+      "low_frequency": "1y"
+    }
+  }
+}

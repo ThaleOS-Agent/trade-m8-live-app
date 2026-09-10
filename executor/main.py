@@ -68,6 +68,24 @@ log = logging.getLogger("executor")
 EXECUTOR_SECRET = os.getenv("EXECUTOR_SECRET", "")
 PAPER_MODE      = os.getenv("PAPER_MODE", "true").lower() == "true"
 
+def _env_true(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() == "true"
+
+def live_trading_enabled() -> bool:
+    return _env_true("ENABLE_LIVE_TRADING", False)
+
+def paper_trading_enabled() -> bool:
+    return _env_true("ENABLE_PAPER_TRADING", True)
+
+def demo_mode_enabled() -> bool:
+    return _env_true("DEMO_MODE", True)
+
+def effective_paper_mode() -> bool:
+    return PAPER_MODE or not live_trading_enabled() or demo_mode_enabled()
+
 if not EXECUTOR_SECRET:
     log.warning("EXECUTOR_SECRET not set — all requests will be rejected")
 
@@ -203,7 +221,11 @@ def health():
     """Liveness probe — no auth required."""
     return {
         "status": "ok",
-        "paper_mode": PAPER_MODE,
+        "paper_mode": effective_paper_mode(),
+        "paper_mode_configured": PAPER_MODE,
+        "enable_paper_trading": paper_trading_enabled(),
+        "enable_live_trading": live_trading_enabled(),
+        "demo_mode": demo_mode_enabled(),
         "uptime_s": round(time.time() - _startup_time, 1),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
@@ -217,7 +239,7 @@ def status_endpoint(_: bool = Depends(verify_token)):
     s = rm.summary()
     return StatusResponse(
         status="running",
-        paper_mode=PAPER_MODE,
+        paper_mode=effective_paper_mode(),
         uptime_seconds=round(time.time() - _startup_time, 1),
         equity=s["equity"],
         total_trades=s["total_trades"],
@@ -259,7 +281,7 @@ def risk_evaluate(req: RiskEvaluateRequest, _: bool = Depends(verify_token)):
         atr           = result.atr,
         risk_amount   = result.risk_amount,
         reject_reason = result.reject_reason,
-        paper_mode    = PAPER_MODE,
+        paper_mode    = effective_paper_mode(),
     )
 
 
@@ -268,8 +290,9 @@ def execute(req: ExecuteRequest, _: bool = Depends(verify_token)):
     """
     Place an order via execute_trade.py.
 
-    If PAPER_MODE=true (default), simulates the fill at entry_price.
-    If PAPER_MODE=false, routes to Binance or OANDA via the real API.
+    If effective paper mode is on, simulates the fill at entry_price.
+    Live execution is only possible when PAPER_MODE=false, ENABLE_LIVE_TRADING=true,
+    and DEMO_MODE=false.
 
     On success, updates the RiskManager open_trade count.
     """
@@ -296,7 +319,7 @@ def execute(req: ExecuteRequest, _: bool = Depends(verify_token)):
     log.info(
         "EXECUTE %s %s %s qty=%.4f fill=%.5f ok=%s paper=%s",
         req.action, req.symbol, req.exchange,
-        req.units, result.fill_price, result.success, PAPER_MODE,
+        req.units, result.fill_price, result.success, effective_paper_mode(),
     )
 
     return ExecuteResponse(
@@ -309,7 +332,7 @@ def execute(req: ExecuteRequest, _: bool = Depends(verify_token)):
         fee        = result.fee,
         order_type = result.order_type,
         exchange   = result.exchange,
-        paper_mode = PAPER_MODE,
+        paper_mode = effective_paper_mode(),
         error      = result.error,
         timestamp  = datetime.now(timezone.utc).isoformat(),
     )
@@ -347,7 +370,7 @@ def execute_close(req: CloseRequest, _: bool = Depends(verify_token)):
         success    = result.success,
         net_pnl    = round(net_pnl, 4),
         order_id   = result.order_id,
-        paper_mode = PAPER_MODE,
+        paper_mode = effective_paper_mode(),
         error      = result.error,
     )
 
@@ -359,7 +382,13 @@ def backtest(req: BacktestRequest, _: bool = Depends(verify_token)):
     Accepts inline CSV text (small datasets < 5MB) or a server-side path.
     Returns metrics with BACKTEST_SYNTHETIC provenance label.
     """
-    from backtest_engine import run_backtest, BacktestConfig
+    try:
+        from backtest_engine import run_backtest, BacktestConfig
+    except Exception as exc:
+        raise HTTPException(
+            503,
+            "Backtest engine is unavailable on this executor. Install executor/requirements-ml.txt to enable it."
+        ) from exc
     import io, tempfile
 
     if req.csv_data:

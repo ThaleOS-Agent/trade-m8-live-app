@@ -1,5 +1,5 @@
 {
-  "name": "xq-trade-m8-cloudflare",
+  "name": "trade-m8-live-app",
   "version": "1.0.0",
   "description": "XQ Trade M8 - Production Automated Trading Platform for Cloudflare",
   "main": "index.js",
