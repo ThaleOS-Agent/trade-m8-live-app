@@ -32,11 +32,16 @@ EXECUTOR_SECRET is set in both:
 
 Start
 -----
-  uvicorn executor.main:app --host 0.0.0.0 --port 8000 --workers 2
+  uvicorn executor.main:app --host 127.0.0.1 --port 8000 --workers 1
+
+  MUST run a single worker: RiskManager is an in-process singleton. Multiple
+  workers would each keep separate daily-loss / open-position counters and
+  silently split every risk gate. Scale with async, not processes.
 """
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import time
@@ -116,7 +121,7 @@ bearer = HTTPBearer()
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(bearer)):
     if not EXECUTOR_SECRET:
         raise HTTPException(status_code=500, detail="EXECUTOR_SECRET not configured on server")
-    if credentials.credentials != EXECUTOR_SECRET:
+    if not hmac.compare_digest(credentials.credentials.strip().encode(), EXECUTOR_SECRET.strip().encode()):
         raise HTTPException(status_code=401, detail="Invalid executor token")
     return True
 
@@ -473,4 +478,4 @@ def features_optimal(_: bool = Depends(verify_token)):
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, workers=2, reload=False)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, workers=1, reload=False)

@@ -10,7 +10,7 @@ export interface ForexCredentials {
   // OANDA
   OANDA_API_KEY?: string;
   OANDA_ACCOUNT_ID?: string;
-  OANDA_PRACTICE?: string; // 'true' = practice, default = live
+  OANDA_PRACTICE?: string; // practice by default; set 'false' to use the LIVE endpoint
 
   // Exness
   EXNESS_API_KEY?: string;
@@ -536,7 +536,7 @@ export class ForexManager {
 
   constructor(creds: ForexCredentials) {
     if (creds.OANDA_API_KEY && creds.OANDA_ACCOUNT_ID) {
-      const practice = creds.OANDA_PRACTICE === 'true';
+      const practice = creds.OANDA_PRACTICE !== 'false'; // fail safe: practice unless explicitly 'false'
       this.oanda = new OANDAConnector(creds.OANDA_API_KEY, creds.OANDA_ACCOUNT_ID, practice);
     }
     if (creds.EXNESS_API_KEY && creds.EXNESS_ACCOUNT_LOGIN) {

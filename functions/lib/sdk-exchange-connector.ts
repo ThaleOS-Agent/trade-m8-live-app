@@ -1718,7 +1718,7 @@ interface ExchangeCredentials {
   // Forex/commodities
   OANDA_API_KEY?: string;
   OANDA_ACCOUNT_ID?: string;
-  OANDA_PRACTICE?: string; // 'true' = practice, default = live
+  OANDA_PRACTICE?: string; // practice by default; set 'false' to use the LIVE endpoint
   // MetaTrader 4/5 (via MetaApi.cloud) — one token+account per platform
   MT4_API_TOKEN?: string;
   MT4_ACCOUNT_ID?: string;
@@ -1796,7 +1796,7 @@ export class ExchangeManager {
       this.oanda = new OandaExchangeAdapter(
         creds.OANDA_API_KEY,
         creds.OANDA_ACCOUNT_ID,
-        creds.OANDA_PRACTICE === 'true'
+        creds.OANDA_PRACTICE !== 'false' // fail safe: practice unless explicitly 'false'
       );
     }
     if (creds.MT4_API_TOKEN && creds.MT4_ACCOUNT_ID) {

@@ -96,8 +96,7 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
   "exchange": "BINANCE",
   "price": {{close}},
   "quantity": 0.001,
-  "tp": {{strategy.position_avg_price}} * 1.02,
-  "sl": {{strategy.position_avg_price}} * 0.98
+  "secret": "YOUR_WEBHOOK_SECRET"
 }`;
 
   const statusColor = (s: string) => {
@@ -127,7 +126,7 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
           </span>
           <span style={{ color: '#4b5563', marginLeft: '12px', fontSize: '0.875rem' }}>
             {status.connectedExchanges?.length ?? 0} exchanges connected
-            {status.secretConfigured ? ' · Secret configured' : ' · No secret (dev mode)'}
+            {status.secretConfigured ? ' · Secret configured' : ' · No secret configured — webhook disabled'}
           </span>
         </div>
       )}
@@ -191,7 +190,8 @@ export default function TradingViewWebhook({ token }: TradingViewWebhookProps) {
             { field: 'action', desc: 'buy | sell | close_long | close_short | hold', required: true },
             { field: 'symbol', desc: 'BTCUSDT, EURUSD, XAUUSD, ...', required: true },
             { field: 'exchange', desc: 'BINANCE, OANDA, BYBIT, ...', required: false },
-            { field: 'price', desc: 'Entry price (use {{close}})', required: false },
+            { field: 'price', desc: 'Entry price (use {{close}}) — needed for paper fills', required: true },
+            { field: 'secret', desc: 'Your TRADINGVIEW_WEBHOOK_SECRET, pasted literally', required: true },
             { field: 'quantity', desc: 'Order size (units/lots)', required: false },
             { field: 'tp', desc: 'Take profit price', required: false },
             { field: 'sl', desc: 'Stop loss price', required: false },
@@ -225,11 +225,11 @@ shortCondition = ta.crossunder(fastMA, slowMA)
 
 if longCondition
     strategy.entry("Long", strategy.long,
-        alert_message='{"action":"buy","symbol":"{{ticker}}","exchange":"{{exchange}}","price":{{close}},"quantity":0.001,"strategy":"ema_cross"}')
+        alert_message='{"action":"buy","symbol":"{{ticker}}","exchange":"{{exchange}}","price":{{close}},"quantity":0.001,"strategy":"ema_cross","secret":"YOUR_WEBHOOK_SECRET"}')
 
 if shortCondition
     strategy.entry("Short", strategy.short,
-        alert_message='{"action":"sell","symbol":"{{ticker}}","exchange":"{{exchange}}","price":{{close}},"quantity":0.001,"strategy":"ema_cross"}')
+        alert_message='{"action":"sell","symbol":"{{ticker}}","exchange":"{{exchange}}","price":{{close}},"quantity":0.001,"strategy":"ema_cross","secret":"YOUR_WEBHOOK_SECRET"}')
 `}
         </pre>
       </div>

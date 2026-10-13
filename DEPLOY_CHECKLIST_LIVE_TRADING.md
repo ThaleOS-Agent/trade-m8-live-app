@@ -277,8 +277,10 @@
 
 ### 4.2  Enable live trading on executor
 
-- [ ] Edit executor .env:
-      sed -i 's/PAPER_MODE=true/PAPER_MODE=false/' \
+- [ ] Edit executor .env — all three gates are required for live orders:
+      sed -i -e 's/^PAPER_MODE=.*/PAPER_MODE=false/' \
+             -e 's/^ENABLE_LIVE_TRADING=.*/ENABLE_LIVE_TRADING=true/' \
+             -e 's/^DEMO_MODE=.*/DEMO_MODE=false/' \
         /home/ubuntu/trade-m8-live-app/.env
 
 - [ ] Restart executor:
@@ -291,17 +293,24 @@
 
 ### 4.3  Enable live trading in Cloudflare
 
-- [ ] Update Pages secret:
-      echo "false" | wrangler pages secret put PAPER_MODE
+- [ ] Update Pages secrets (production) — all three:
+      printf false | wrangler pages secret put PAPER_MODE          --project-name trade-m8-live-app --env production
+      printf true  | wrangler pages secret put ENABLE_LIVE_TRADING --project-name trade-m8-live-app --env production
+      printf false | wrangler pages secret put DEMO_MODE           --project-name trade-m8-live-app --env production
 
-- [ ] Update Worker secret:
-      echo "false" | wrangler secret put PAPER_MODE \
-        --config wrangler.worker.toml
+- [ ] Update Worker secrets — all three:
+      printf false | wrangler secret put PAPER_MODE          --config wrangler.worker.toml
+      printf true  | wrangler secret put ENABLE_LIVE_TRADING --config wrangler.worker.toml
+      printf false | wrangler secret put DEMO_MODE           --config wrangler.worker.toml
 
-- [ ] Confirm live gate open via public endpoint:
+- [ ] Redeploy Pages (secrets apply on the next deployment)
+
+- [ ] Confirm live gate open via public endpoints:
+      curl https://trade-m8.app/api/runtime-config
+      # MUST SHOW: "effectiveTradingMode": "live"
       curl https://trade-m8.app/api/executor/health
       # MUST SHOW: "paper_mode": false
-      # If "paper_mode": true appears — STOP. Do not proceed.
+      # If either still shows paper — STOP. Do not proceed.
 
 ### 4.4  First live trade
 
