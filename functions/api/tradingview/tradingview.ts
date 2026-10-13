@@ -13,16 +13,17 @@
  *     "symbol":    "BTCUSDT" | "EURUSD" | "XAUUSD" | ...,
  *     "exchange":  "BINANCE" | "OANDA" | "binance" | ...,
  *     "strategy":  "momentum" | "rsi_reversion" | ... (optional),
- *     "price":     123.45,                             (optional)
+ *     "price":     123.45,                             (required for paper fills — use {{close}})
  *     "quantity":  0.01,                               (optional)
  *     "tp":        125.00,                             (optional)
  *     "sl":        121.00,                             (optional)
  *     "message":   "Strategy fired: RSI < 30",         (optional)
- *     "secret":    "your-webhook-secret"               (optional but recommended)
+ *     "secret":    "your-webhook-secret"               (required)
  *   }
  *
- * Set TRADINGVIEW_WEBHOOK_SECRET as a Cloudflare Pages secret to enable
- * signature verification. Leave empty to accept all requests (dev only).
+ * TRADINGVIEW_WEBHOOK_SECRET must be set as a Cloudflare Pages secret; the
+ * webhook fails closed (503) without it. Orders are paper fills unless
+ * ENABLE_LIVE_TRADING=true, PAPER_MODE=false and DEMO_MODE=false.
  */
 
 import { createExchangeManager } from '../../lib/sdk-exchange-connector';
@@ -285,6 +286,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           symbol: 'BTCUSDT',
           exchange: 'BINANCE',
           strategy: 'momentum',
+          price: '{{close}}',
           quantity: 0.001,
           tp: 50000,
           sl: 45000,

@@ -218,20 +218,29 @@ curl https://trade-m8.app/api/executor/health
 
 Only after paper mode confirms correct fills for at least 1 week:
 
+Live orders require **all three** gates, on the executor, the Pages project
+and the Worker. Any one left at its default keeps every order on paper
+(see `functions/lib/security.ts` and `effective_paper_mode()` in `main.py`).
+
 ```bash
 # On the executor server
-sed -i 's/PAPER_MODE=true/PAPER_MODE=false/' .env
+sed -i -e 's/^PAPER_MODE=.*/PAPER_MODE=false/' \
+       -e 's/^ENABLE_LIVE_TRADING=.*/ENABLE_LIVE_TRADING=true/' \
+       -e 's/^DEMO_MODE=.*/DEMO_MODE=false/' .env
 sudo systemctl restart xq-executor
 
-# In Cloudflare
-npx wrangler pages secret put PAPER_MODE
-# → Enter: false
-npx wrangler secret put PAPER_MODE --config wrangler.worker.toml
-# → Enter: false
+# In Cloudflare — Pages (production) and the Worker
+for kv in PAPER_MODE=false ENABLE_LIVE_TRADING=true DEMO_MODE=false; do
+  printf '%s' "${kv#*=}" | npx wrangler pages secret put "${kv%%=*}" --project-name trade-m8-live-app --env production
+  printf '%s' "${kv#*=}" | npx wrangler secret put "${kv%%=*}" --config wrangler.worker.toml
+done
+# Pages secrets apply on the next deployment — redeploy Pages afterwards.
 
-# Verify gate is open
+# Verify all gates are open
+curl https://trade-m8.app/api/runtime-config
+# "effectiveTradingMode": "live"  ← confirms live mode active
 curl https://trade-m8.app/api/executor/health
-# "paper_mode": false  ← confirms live mode active
+# "paper_mode": false
 ```
 
 ---
