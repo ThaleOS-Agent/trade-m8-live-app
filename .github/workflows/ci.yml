@@ -1,0 +1,40 @@
+name: CI — typecheck, tests, build
+
+# Runs on every PR so security and paper-gate regressions are caught BEFORE
+# anything reaches main (deploy.yml deploys on push to main).
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Typecheck Pages Functions + Worker
+        run: npx tsc -p functions --noEmit
+
+      - name: Security & paper-gate tests
+        run: npx vitest run functions/__tests__
+
+      - name: Build frontend
+        run: npm run build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Executor compiles
+        run: python -m py_compile executor/main.py

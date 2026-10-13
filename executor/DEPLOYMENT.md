@@ -152,7 +152,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/trade-m8-live-app
 EnvironmentFile=/home/ubuntu/trade-m8-live-app/.env
-ExecStart=/home/ubuntu/trade-m8-live-app/.venv/bin/uvicorn executor.main:app --host 0.0.0.0 --port 8000 --workers 2
+ExecStart=/home/ubuntu/trade-m8-live-app/.venv/bin/uvicorn executor.main:app --host 127.0.0.1 --port 8000 --workers 1
 Restart=always
 RestartSec=10
 

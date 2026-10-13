@@ -28,6 +28,7 @@
 import { createExchangeManager } from '../../lib/sdk-exchange-connector';
 import { createForexManager } from '../../lib/forex-connector';
 import { sendNotification } from '../../lib/notification-service';
+import { timingSafeEqual, verifyUser, liveTradingAllowed, redactPayload } from '../../lib/security';
 
 const FOREX_SYMBOLS = new Set([
   'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'NZD', 'CAD',
@@ -42,6 +43,10 @@ interface Env {
   SESSIONS: KVNamespace;
   JWT_SECRET: string;
   TRADINGVIEW_WEBHOOK_SECRET: string;
+  // Trading-mode gates (see functions/lib/security.ts → liveTradingAllowed)
+  ENABLE_LIVE_TRADING?: string;
+  PAPER_MODE?: string;
+  DEMO_MODE?: string;
   // Exchange secrets
   BINANCE_API_KEY: string;
   BINANCE_SECRET_KEY: string;
@@ -234,21 +239,25 @@ async function parseAlertBody(request: Request): Promise<Record<string, any>> {
 }
 
 /**
- * Verify webhook secret (if configured)
+ * Verify webhook secret. Fails closed: callers must reject when no secret is configured.
+ * TradingView cannot send custom headers, so the secret normally arrives in the JSON body.
  */
 function verifySecret(request: Request, body: Record<string, any>, configuredSecret: string): boolean {
-  if (!configuredSecret) return true; // No secret configured — allow all
+  const expected = configuredSecret.trim();
+  if (!expected) return false;
 
-  // Check header
-  const headerSecret = request.headers.get('X-TradingView-Secret');
-  if (headerSecret === configuredSecret) return true;
-
-  // Check body field
-  if (body.secret === configuredSecret) return true;
-  if (body.key === configuredSecret) return true;
-  if (body.token === configuredSecret) return true;
-
-  return false;
+  const candidates = [
+    request.headers.get('X-TradingView-Secret'),
+    body.secret,
+    body.key,
+    body.token,
+  ];
+  let matched = false;
+  for (const c of candidates) {
+    // Evaluate every candidate so timing does not reveal which field matched.
+    if (typeof c === 'string' && timingSafeEqual(c.trim(), expected)) matched = true;
+  }
+  return matched;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -279,17 +288,18 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           quantity: 0.001,
           tp: 50000,
           sl: 45000,
-          secret: '{{strategy.order.comment}}'
+          // Paste your TRADINGVIEW_WEBHOOK_SECRET literally. Do NOT use
+          // {{strategy.order.comment}} — TradingView fills it with each order's comment.
+          secret: 'YOUR_WEBHOOK_SECRET'
         },
+        tradingMode: liveTradingAllowed(env) ? 'live' : 'paper',
         timestamp: new Date().toISOString(),
       });
     }
 
     // ── GET /api/tradingview/signals ─────────────────────────────────────────
     if (method === 'GET' && path.includes('/signals')) {
-      // Auth required
-      const authHeader = request.headers.get('Authorization');
-      if (!authHeader?.startsWith('Bearer ')) return err('Unauthorized', 401);
+      if (!(await verifyUser(request, env)).valid) return err('Unauthorized', 401);
 
       const limit = parseInt(url.searchParams.get('limit') ?? '50');
       const rows = await env.DB.prepare(
@@ -301,8 +311,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     // ── POST /api/tradingview/test ───────────────────────────────────────────
     if (method === 'POST' && path.includes('/test')) {
-      const authHeader = request.headers.get('Authorization');
-      if (!authHeader?.startsWith('Bearer ')) return err('Unauthorized', 401);
+      if (!(await verifyUser(request, env)).valid) return err('Unauthorized', 401);
 
       return json({
         success: true,
@@ -316,8 +325,14 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     if (method === 'POST' && path.includes('/webhook')) {
       const body = await parseAlertBody(request);
 
+      // Fail closed: an unconfigured secret disables the webhook entirely.
+      if (!(env.TRADINGVIEW_WEBHOOK_SECRET ?? '').trim()) {
+        return err('Webhook disabled: TRADINGVIEW_WEBHOOK_SECRET is not configured', 503);
+      }
+
       // Verify secret
       if (!verifySecret(request, body, env.TRADINGVIEW_WEBHOOK_SECRET ?? '')) {
+        await ensureSignalsTable(env);
         // Log failed attempt
         await env.DB.prepare(
           `INSERT OR IGNORE INTO tradingview_signals
@@ -328,7 +343,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           body.action ?? 'unknown',
           body.symbol ?? 'unknown',
           body.exchange ?? 'unknown',
-          JSON.stringify(body).slice(0, 500),
+          JSON.stringify(redactPayload(body)).slice(0, 500),
         ).run().catch(() => {});
 
         return err('Invalid webhook secret', 403);
@@ -372,7 +387,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         takeProfit ?? null,
         stopLoss ?? null,
         String(message).slice(0, 500),
-        JSON.stringify(body).slice(0, 1000),
+        JSON.stringify(redactPayload(body)).slice(0, 1000),
       ).run().catch(console.warn);
 
       // If action is 'hold' — just log, don't trade
@@ -395,9 +410,22 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       let orderResult: any = null;
       let executionError: string | null = null;
       const useForex = isForex || FOREX_EXCHANGES.has(exchange);
+      const isLive = liveTradingAllowed(env);
 
       try {
-        if (useForex) {
+        if (!isLive) {
+          // PAPER GATE — never touch an exchange unless live trading is explicitly enabled.
+          if (!alertPrice || !(alertPrice > 0)) {
+            throw new Error('Paper fill requires a price in the alert (use "price": "{{close}}")');
+          }
+          orderResult = {
+            success: true,
+            orderId: `PAPER-${signalId}`,
+            averagePrice: alertPrice,
+            status: 'paper_filled',
+            paper: true,
+          };
+        } else if (useForex) {
           // Forex / commodity execution via ForexManager
           const fxManager = getForexManager(env);
           const oandaSymbol = symbol.replace('/', '_');
@@ -427,7 +455,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         executionError = e.message ?? 'Order execution failed';
       }
 
-      const status = orderResult?.success ? 'executed' : (executionError ? 'failed' : 'rejected');
+      const status = orderResult?.success
+        ? (isLive ? 'executed' : 'paper_executed')
+        : (executionError ? 'failed' : 'rejected');
 
       // Update signal status in DB
       await env.DB.prepare(
@@ -455,7 +485,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           'market',
           parseFloat(String(quantity)),
           orderResult.averagePrice ?? alertPrice ?? null,
-          exchange,
+          isLive ? exchange : `paper:${exchange}`,
           strategy,
           orderResult.status ?? 'filled',
           0.8,  // TradingView strategy signals are high-confidence
@@ -508,6 +538,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         orderResult,
         executionError,
         status,
+        tradingMode: isLive ? 'live' : 'paper',
         timestamp,
       });
     }
