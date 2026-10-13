@@ -18,7 +18,7 @@ Cloudflare Pages / Worker
         |
         | HTTPS
         v
-executor.trade-m8.app
+trade-m8-executor.thaleos.network
         |
         | managed Cloudflare Tunnel
         v
@@ -61,7 +61,7 @@ In Cloudflare dashboard:
 2. Create a tunnel
 3. Name it for the executor
 4. Add a published application route:
-   - Hostname: `executor.trade-m8.app`
+   - Hostname: `trade-m8-executor.thaleos.network`
    - Service URL: `http://127.0.0.1:8000`
 
 Cloudflare’s production tunnel flow requires a Cloudflare account, a domain on Cloudflare, and a machine where `cloudflared` runs.
@@ -82,25 +82,25 @@ You can also generate a host-specific config with:
 
 ```bash
 bash scripts/setup-cloudflare-tunnel.sh \
-  --hostname executor.trade-m8.app \
+  --hostname trade-m8-executor.thaleos.network \
   --write-config
 ```
 
 ## 4. Push Cloudflare runtime secrets
 
-Once `executor.trade-m8.app` resolves and the tunnel is healthy:
+Once `trade-m8-executor.thaleos.network` resolves and the tunnel is healthy:
 
 ```bash
 export EXECUTOR_SECRET="$(openssl rand -hex 32)"
 
 bash scripts/setup-cloudflare-tunnel.sh \
-  --hostname executor.trade-m8.app \
+  --hostname trade-m8-executor.thaleos.network \
   --set-cloudflare-secrets
 ```
 
 That script sets:
 
-- `EXECUTOR_URL=https://executor.trade-m8.app`
+- `EXECUTOR_URL=https://trade-m8-executor.thaleos.network`
 - `EXECUTOR_SECRET=<same value on Pages and Worker>`
 - `PAPER_MODE=true`
 - `ENABLE_PAPER_TRADING=true`
@@ -118,7 +118,7 @@ curl http://127.0.0.1:8000/health
 Through the tunnel:
 
 ```bash
-curl https://executor.trade-m8.app/health
+curl https://trade-m8-executor.thaleos.network/health
 ```
 
 From the deployed Pages app:

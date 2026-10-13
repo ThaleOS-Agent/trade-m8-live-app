@@ -77,6 +77,12 @@ EXECUTOR_URL="https://${HOSTNAME}"
 CONFIG_DIR="$REPO_DIR/executor/cloudflare"
 CONFIG_PATH="$CONFIG_DIR/cloudflared-config.yml"
 
+if [ "$(uname -s)" = "Darwin" ]; then
+  CLOUDFLARED_CREDENTIALS_DIR="${CLOUDFLARED_CREDENTIALS_DIR:-$HOME/.cloudflared}"
+else
+  CLOUDFLARED_CREDENTIALS_DIR="${CLOUDFLARED_CREDENTIALS_DIR:-/etc/cloudflared}"
+fi
+
 echo ""
 echo -e "${BOLD}${BLUE}Cloudflare Tunnel Helper${NC}"
 echo -e "${CYAN}  Repo: ${REPO_DIR}${NC}"
@@ -89,7 +95,7 @@ if [ "$WRITE_CONFIG" = true ]; then
   mkdir -p "$CONFIG_DIR"
   cat > "$CONFIG_PATH" <<EOF
 tunnel: ${TUNNEL_ID:-REPLACE_WITH_TUNNEL_ID}
-credentials-file: /etc/cloudflared/${TUNNEL_ID:-REPLACE_WITH_TUNNEL_ID}.json
+credentials-file: ${CLOUDFLARED_CREDENTIALS_DIR}/${TUNNEL_ID:-REPLACE_WITH_TUNNEL_ID}.json
 
 ingress:
   - hostname: ${HOSTNAME}

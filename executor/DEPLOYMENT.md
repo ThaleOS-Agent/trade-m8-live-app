@@ -171,14 +171,14 @@ sudo systemctl status xq-executor
 ## Step 6 — Set secrets in Cloudflare
 
 If you are using a managed Cloudflare Tunnel, set `EXECUTOR_URL` to the tunnel
-hostname, for example `https://executor.trade-m8.app`, not a raw server IP.
+hostname, for example `https://trade-m8-executor.thaleos.network`, not a raw server IP.
 
 ```bash
 # Run these from your local machine (not the server)
 # These connect the Cloudflare Worker to the executor
 
 npx wrangler pages secret put EXECUTOR_URL
-# → Enter: https://executor.trade-m8.app
+# → Enter: https://trade-m8-executor.thaleos.network
 # → Use the managed Cloudflare Tunnel hostname, not a Quick Tunnel URL
 
 npx wrangler pages secret put EXECUTOR_SECRET

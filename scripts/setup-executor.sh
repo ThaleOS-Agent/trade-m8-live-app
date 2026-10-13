@@ -12,8 +12,8 @@
 #   curl http://localhost:8000/health   → should return {"status":"ok",...}
 #
 # After running on the executor host, recommended next step:
-#   bash scripts/setup-cloudflare-tunnel.sh --hostname executor.trade-m8.app --write-config
-#   bash scripts/setup-cloudflare-tunnel.sh --hostname executor.trade-m8.app --set-cloudflare-secrets
+#   bash scripts/setup-cloudflare-tunnel.sh --hostname trade-m8-executor.thaleos.network --write-config
+#   bash scripts/setup-cloudflare-tunnel.sh --hostname trade-m8-executor.thaleos.network --set-cloudflare-secrets
 # =============================================================================
 
 set -euo pipefail

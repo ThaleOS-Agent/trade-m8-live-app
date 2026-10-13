@@ -1,8 +1,10 @@
 tunnel: REPLACE_WITH_TUNNEL_ID
-credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_ID.json
+# macOS: /Users/<username>/.cloudflared/REPLACE_WITH_TUNNEL_ID.json
+# Linux service: /etc/cloudflared/REPLACE_WITH_TUNNEL_ID.json
+credentials-file: /Users/REPLACE_WITH_USERNAME/.cloudflared/REPLACE_WITH_TUNNEL_ID.json
 
 ingress:
-  - hostname: executor.trade-m8.app
+  - hostname: trade-m8-executor.thaleos.network
     service: http://127.0.0.1:8000
     originRequest:
       noTLSVerify: true
