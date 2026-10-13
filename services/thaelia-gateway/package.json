@@ -1,0 +1,25 @@
+{
+  "name": "thaelia-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "THAELIA Exchange Gateway — long-running exchange streams (Binance, OANDA) on the Tokyo host. Binance blocks Cloudflare egress, so these feeds cannot run in Workers.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": { "node": ">=22" }
+}
